@@ -5,7 +5,7 @@ services:
     build: .
     container_name: ai-staff
     ports:
-      - "8000:8000"
+      - "8002:8000"
     volumes:
       - ./data:/app/data
     environment:
