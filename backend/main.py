@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
-from routers import chat, staff, webhook
+from routers import chat, staff, webhook, auth
 
 # Initialize database
 init_db()
@@ -25,10 +25,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# API routes
+# API routes - auth is public
+app.include_router(auth.router, prefix="/api")
+# Chat and webhook are public
 app.include_router(chat.router, prefix="/api")
-app.include_router(staff.router, prefix="/api")
 app.include_router(webhook.router, prefix="/api")
+# Staff routes require authentication
+app.include_router(staff.router, prefix="/api")
 
 # Static files
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")

@@ -32,13 +32,53 @@
     </style>
 </head>
 <body class="bg-slate-50 h-screen overflow-hidden">
+    <!-- ===== Login Page ===== -->
+    <div id="page-login" class="page h-full items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div class="w-full px-6">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
+                    <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">AI客服员工</h1>
+                <p id="login-subtitle" class="text-sm text-slate-400 mt-1">登录管理后台</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6 max-w-sm mx-auto">
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">用户名</label>
+                        <input id="login-username" type="text" placeholder="请输入用户名" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">密码</label>
+                        <input id="login-password" type="password" placeholder="请输入密码" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter')doLogin()">
+                    </div>
+                    <div id="login-confirm-pw-group" class="hidden">
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">确认密码</label>
+                        <input id="login-confirm-pw" type="password" placeholder="请再次输入密码" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter')doLogin()">
+                    </div>
+                    <div id="login-error" class="text-red-500 text-xs hidden"></div>
+                    <button id="login-btn" onclick="doLogin()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl py-2.5 text-sm transition-colors shadow-sm shadow-indigo-200">
+                        登录
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="app" class="h-full flex flex-col max-w-lg mx-auto bg-white relative">
 
         <!-- ===== Page: My Staff (Home) ===== -->
         <div id="page-home" class="page active h-full">
             <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100">
                 <h1 class="text-xl font-bold text-slate-800">我的员工</h1>
-                <button onclick="showAddStaffModal()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xl hover:bg-indigo-600 transition-colors shadow-sm">+</button>
+                <div class="flex items-center gap-2">
+                    <button onclick="doLogout()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors" title="退出登录">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    </button>
+                    <button onclick="showAddStaffModal()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xl hover:bg-indigo-600 transition-colors shadow-sm">+</button>
+                </div>
             </div>
             <div id="staff-list" class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
                 <div id="empty-state" class="flex flex-col items-center justify-center h-full text-slate-400">
@@ -408,6 +448,169 @@
         let ruleKeywords = [];
         let chatFrom = 'home'; // track where chat was opened from
         const API_BASE = '/api';
+
+        // ===== Authentication =====
+        const TOKEN_KEY = 'ai_staff_token';
+        let isLoggedIn = false;
+
+        function getToken() { return localStorage.getItem(TOKEN_KEY); }
+        function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+        function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+        async function authFetch(url, options = {}) {
+            const token = getToken();
+            if (!options.headers) options.headers = {};
+            if (token) options.headers['Authorization'] = 'Bearer ' + token;
+            if (options.body && typeof options.body === 'string') {
+                options.headers['Content-Type'] = 'application/json';
+            }
+            const res = await fetch(url, options);
+            if (res.status === 401) {
+                clearToken();
+                showLoginPage();
+                throw new Error('登录已过期');
+            }
+            return res;
+        }
+
+        async function checkAuth() {
+            try {
+                // Check if admin exists
+                const statusRes = await fetch(API_BASE + '/auth/status');
+                const statusData = await statusRes.json();
+
+                const token = getToken();
+                if (!token) {
+                    showLoginPage(statusData.has_admin);
+                    return;
+                }
+
+                // Verify token
+                const meRes = await authFetch(API_BASE + '/auth/me');
+                if (meRes.ok) {
+                    isLoggedIn = true;
+                    showMainApp();
+                } else {
+                    clearToken();
+                    showLoginPage(statusData.has_admin);
+                }
+            } catch (e) {
+                showLoginPage(false);
+            }
+        }
+
+        function showLoginPage(hasAdmin) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); });
+            document.querySelectorAll('.sub-page').forEach(p => { p.classList.remove('active'); });
+            document.getElementById('page-login').classList.add('active');
+
+            const subtitle = document.getElementById('login-subtitle');
+            const btn = document.getElementById('login-btn');
+            const confirmGroup = document.getElementById('login-confirm-pw-group');
+            const errorDiv = document.getElementById('login-error');
+
+            errorDiv.classList.add('hidden');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-confirm-pw').value = '';
+
+            if (!hasAdmin) {
+                subtitle.textContent = '首次使用，请设置管理员账号';
+                btn.textContent = '注册并登录';
+                confirmGroup.classList.remove('hidden');
+                window._loginMode = 'register';
+            } else {
+                subtitle.textContent = '登录管理后台';
+                btn.textContent = '登录';
+                confirmGroup.classList.add('hidden');
+                window._loginMode = 'login';
+            }
+        }
+
+        async function doLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            const btn = document.getElementById('login-btn');
+
+            errorDiv.classList.add('hidden');
+
+            if (!username || !password) {
+                errorDiv.textContent = '请输入用户名和密码';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (window._loginMode === 'register') {
+                const confirmPw = document.getElementById('login-confirm-pw').value;
+                if (password !== confirmPw) {
+                    errorDiv.textContent = '两次输入的密码不一致';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+                if (password.length < 4) {
+                    errorDiv.textContent = '密码至少4个字符';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            btn.disabled = true;
+            btn.textContent = '处理中...';
+
+            try {
+                let url, body;
+                if (window._loginMode === 'register') {
+                    url = API_BASE + '/auth/register';
+                } else {
+                    url = API_BASE + '/auth/login';
+                }
+
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.detail || '操作失败');
+                }
+
+                setToken(data.token);
+                isLoggedIn = true;
+                showMainApp();
+                loadStaff();
+                loadStatsOverview();
+                loadSettings();
+            } catch (e) {
+                errorDiv.textContent = e.message || '操作失败';
+                errorDiv.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = window._loginMode === 'register' ? '注册并登录' : '登录';
+            }
+        }
+
+        function showMainApp() {
+            document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); });
+            document.querySelectorAll('.sub-page').forEach(p => { p.classList.remove('active'); });
+            document.getElementById('page-home').classList.add('active');
+        }
+
+        function doLogout() {
+            const token = getToken();
+            if (token) {
+                fetch(API_BASE + '/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                }).catch(() => {});
+            }
+            clearToken();
+            isLoggedIn = false;
+            checkAuth();
+        }
+
         const PLATFORM_COLORS = {
             '通用': 'bg-slate-100 text-slate-600',
             '微信': 'bg-green-100 text-green-700',
@@ -420,8 +623,7 @@
 
         // ===== Init =====
         document.addEventListener('DOMContentLoaded', () => {
-            loadStaff();
-            loadSettings();
+            checkAuth();
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW error:', err));
             }
@@ -451,7 +653,7 @@
         // ===== Staff List =====
         async function loadStaff() {
             try {
-                const res = await fetch(API_BASE + '/staff');
+                const res = await authFetch(API_BASE + '/staff');
                 staffList = await res.json();
                 renderStaffList();
             } catch (e) {
@@ -510,7 +712,7 @@
             if (!name || !role) { alert('请填写员工名称和角色描述'); return; }
 
             try {
-                await fetch(API_BASE + '/staff', {
+                await authFetch(API_BASE + '/staff', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, role_description: role, knowledge_base: knowledge, platform })
@@ -614,7 +816,7 @@
         // ===== Edit Staff =====
         async function openEditStaff(staffId) {
             try {
-                const res = await fetch(API_BASE + '/staff/' + staffId + '/stats');
+                const res = await authFetch(API_BASE + '/staff/' + staffId + '/stats');
                 const stats = await res.json();
                 document.getElementById('edit-stat-total-conv').textContent = stats.total_conversations;
                 document.getElementById('edit-stat-today-conv').textContent = stats.today_conversations;
@@ -677,7 +879,7 @@
             const transferMsg = document.getElementById('edit-transfer-msg').value;
 
             try {
-                await fetch(API_BASE + '/staff/' + currentStaffId, {
+                await authFetch(API_BASE + '/staff/' + currentStaffId, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -704,7 +906,7 @@
         async function deleteStaff() {
             if (!confirm('确定删除该员工？所有对话记录也会被删除。')) return;
             try {
-                await fetch(API_BASE + '/staff/' + currentStaffId, { method: 'DELETE' });
+                await authFetch(API_BASE + '/staff/' + currentStaffId, { method: 'DELETE' });
                 closeEditStaff();
                 showToast('员工已删除');
             } catch (e) {
@@ -832,7 +1034,7 @@
         // ===== Staff Conversations =====
         async function viewStaffConversations() {
             try {
-                const res = await fetch(API_BASE + '/staff/' + currentStaffId + '/conversations');
+                const res = await authFetch(API_BASE + '/staff/' + currentStaffId + '/conversations');
                 const convs = await res.json();
                 const staff = staffList.find(s => s.id === currentStaffId);
                 document.getElementById('conv-list-title').textContent = (staff ? staff.name : '') + ' - 对话记录';
@@ -875,7 +1077,7 @@
 
         async function viewConvDetail(convId) {
             try {
-                const res = await fetch(API_BASE + '/conversations/' + convId);
+                const res = await authFetch(API_BASE + '/conversations/' + convId);
                 const conv = await res.json();
                 const msgs = conv.messages || [];
                 const container = document.getElementById('conv-detail-messages');
@@ -903,7 +1105,7 @@
         // ===== Stats Overview =====
         async function loadStatsOverview() {
             try {
-                const res = await fetch(API_BASE + '/stats/overview');
+                const res = await authFetch(API_BASE + '/stats/overview');
                 const data = await res.json();
                 document.getElementById('stat-total-conv').textContent = data.total_conversations;
                 document.getElementById('stat-today-conv').textContent = data.today_conversations;
@@ -936,7 +1138,7 @@
         // ===== Settings =====
         async function loadSettings() {
             try {
-                const res = await fetch(API_BASE + '/settings');
+                const res = await authFetch(API_BASE + '/settings');
                 const data = await res.json();
                 document.getElementById('setting-api-key').value = data.api_key || '';
                 document.getElementById('setting-model-id').value = data.model_id || '';
@@ -946,7 +1148,7 @@
 
         async function saveSettings() {
             try {
-                await fetch(API_BASE + '/settings', {
+                await authFetch(API_BASE + '/settings', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

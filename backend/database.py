@@ -60,6 +60,25 @@ def init_db():
         )
     """)
 
+    # Admin authentication tables
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS admin (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sessions (
+            token TEXT PRIMARY KEY,
+            admin_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (admin_id) REFERENCES admin(id) ON DELETE CASCADE
+        )
+    """)
+
     # Insert default settings if not exist
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('api_key', 'ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9')")
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('model_id', 'ep-20260707225043-z7nkm')")

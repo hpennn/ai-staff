@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from database import get_db
 from models import StaffCreate, StaffUpdate, StaffResponse, ConversationResponse, ConversationDetailResponse, SettingsUpdate, SettingsResponse
+from routers.auth import get_current_admin
 import json
 import random
 
@@ -14,7 +15,7 @@ AVATAR_COLORS = [
 
 
 @router.get("/staff")
-async def get_staff_list():
+async def get_staff_list(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM staff ORDER BY created_at DESC")
@@ -24,7 +25,7 @@ async def get_staff_list():
 
 
 @router.post("/staff")
-async def create_staff(staff: StaffCreate):
+async def create_staff(staff: StaffCreate, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -54,7 +55,7 @@ async def create_staff(staff: StaffCreate):
 
 
 @router.put("/staff/{staff_id}")
-async def update_staff(staff_id: int, staff: StaffUpdate):
+async def update_staff(staff_id: int, staff: StaffUpdate, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -108,7 +109,7 @@ async def update_staff(staff_id: int, staff: StaffUpdate):
 
 
 @router.delete("/staff/{staff_id}")
-async def delete_staff(staff_id: int):
+async def delete_staff(staff_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM staff WHERE id = ?", (staff_id,))
@@ -125,7 +126,7 @@ async def delete_staff(staff_id: int):
 
 
 @router.get("/staff/{staff_id}/stats")
-async def get_staff_stats(staff_id: int):
+async def get_staff_stats(staff_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -175,7 +176,7 @@ async def get_staff_stats(staff_id: int):
 
 
 @router.get("/stats/overview")
-async def get_stats_overview():
+async def get_stats_overview(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -244,7 +245,7 @@ async def get_stats_overview():
 
 
 @router.get("/conversations")
-async def get_conversations():
+async def get_conversations(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
@@ -267,7 +268,7 @@ async def get_conversations():
 
 
 @router.get("/staff/{staff_id}/conversations")
-async def get_staff_conversations(staff_id: int):
+async def get_staff_conversations(staff_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -298,7 +299,7 @@ async def get_staff_conversations(staff_id: int):
 
 
 @router.get("/conversations/{conv_id}")
-async def get_conversation_detail(conv_id: int):
+async def get_conversation_detail(conv_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM conversation WHERE id = ?", (conv_id,))
@@ -314,7 +315,7 @@ async def get_conversation_detail(conv_id: int):
 
 
 @router.delete("/conversations/{conv_id}")
-async def delete_conversation(conv_id: int):
+async def delete_conversation(conv_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM conversation WHERE id = ?", (conv_id,))
@@ -330,7 +331,7 @@ async def delete_conversation(conv_id: int):
 
 
 @router.get("/settings")
-async def get_settings():
+async def get_settings(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT key, value FROM settings")
@@ -344,7 +345,7 @@ async def get_settings():
 
 
 @router.put("/settings")
-async def update_settings(settings: SettingsUpdate):
+async def update_settings(settings: SettingsUpdate, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
