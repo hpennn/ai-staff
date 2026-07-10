@@ -79,6 +79,31 @@ def init_db():
         )
     """)
 
+    # Shops table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS shops (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            platform TEXT NOT NULL,
+            shop_name TEXT NOT NULL,
+            shop_id TEXT NOT NULL,
+            staff_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL
+        )
+    """)
+
+    # Platform config table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS platform_config (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            platform TEXT UNIQUE NOT NULL,
+            config_json TEXT NOT NULL DEFAULT '{}',
+            status TEXT DEFAULT '未配置',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     # Insert default settings if not exist
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('api_key', 'ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9')")
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('model_id', 'ep-20260707225043-z7nkm')")
@@ -94,6 +119,7 @@ def init_db():
         "sensitive_words": "TEXT DEFAULT '[]'",
         "auto_reply_rules": "TEXT DEFAULT '[]'",
         "transfer_message": "TEXT DEFAULT '正在为您转接人工客服，请稍候...'",
+        "shop_id": "INTEGER",
     }
     for col, col_type in new_columns.items():
         if not _column_exists(cursor, "staff", col):

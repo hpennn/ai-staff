@@ -29,1155 +29,1607 @@
         .tag-remove { margin-left: 4px; cursor: pointer; font-size: 14px; line-height: 1; }
         .sub-page { position: absolute; inset: 0; z-index: 40; background: white; display: none; flex-direction: column; }
         .sub-page.active { display: flex; }
+        .platform-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .platform-card .status-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 12px; }
     </style>
 </head>
 <body class="bg-slate-50 h-screen overflow-hidden">
-    <!-- ===== Login Page ===== -->
-    <div id="page-login" class="page h-full items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        <div class="w-full px-6">
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
-                    <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
-                </div>
-                <h1 class="text-2xl font-bold text-slate-800">AI客服员工</h1>
-                <p id="login-subtitle" class="text-sm text-slate-400 mt-1">登录管理后台</p>
+
+<div id="app" class="h-full flex flex-col max-w-lg mx-auto bg-white relative">
+
+    <!-- ===== Page: My Staff (Home) ===== -->
+    <div id="page-home" class="page active h-full">
+        <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100">
+            <h1 class="text-xl font-bold text-slate-800">我的员工</h1>
+            <div class="flex items-center gap-2">
+                <button onclick="navigateTo('settings')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-500 transition-colors" title="设置">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </button>
+                <button onclick="showAddStaffModal()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xl hover:bg-indigo-600 transition-colors shadow-sm">+</button>
             </div>
-            <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6 max-w-sm mx-auto">
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-xs font-medium text-slate-500 mb-1 block">用户名</label>
-                        <input id="login-username" type="text" placeholder="请输入用户名" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors">
-                    </div>
-                    <div>
-                        <label class="text-xs font-medium text-slate-500 mb-1 block">密码</label>
-                        <input id="login-password" type="password" placeholder="请输入密码" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter')doLogin()">
-                    </div>
-                    <div id="login-confirm-pw-group" class="hidden">
-                        <label class="text-xs font-medium text-slate-500 mb-1 block">确认密码</label>
-                        <input id="login-confirm-pw" type="password" placeholder="请再次输入密码" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter')doLogin()">
-                    </div>
-                    <div id="login-error" class="text-red-500 text-xs hidden"></div>
-                    <button id="login-btn" onclick="doLogin()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl py-2.5 text-sm transition-colors shadow-sm shadow-indigo-200">
-                        登录
-                    </button>
-                </div>
+        </div>
+        <div id="staff-list" class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            <div id="empty-state" class="flex flex-col items-center justify-center h-full text-slate-400">
+                <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <p class="text-sm">还没有客服员工</p>
+                <p class="text-xs mt-1">点击右上角 + 创建第一个客服员工</p>
             </div>
         </div>
     </div>
 
-    <div id="app" class="h-full flex flex-col max-w-lg mx-auto bg-white relative">
-
-        <!-- ===== Page: My Staff (Home) ===== -->
-        <div id="page-home" class="page active h-full">
-            <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100">
-                <h1 class="text-xl font-bold text-slate-800">我的员工</h1>
-                <div class="flex items-center gap-2">
-                    <button onclick="doLogout()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors" title="退出登录">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                    </button>
-                    <button onclick="showAddStaffModal()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xl hover:bg-indigo-600 transition-colors shadow-sm">+</button>
-                </div>
-            </div>
-            <div id="staff-list" class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-                <div id="empty-state" class="flex flex-col items-center justify-center h-full text-slate-400">
-                    <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    <p class="text-sm">还没有客服员工</p>
-                    <p class="text-xs mt-1">点击右上角 + 创建第一个客服员工</p>
-                </div>
+    <!-- ===== Page: Chat Window ===== -->
+    <div id="page-chat" class="page h-full bg-slate-50">
+        <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
+            <button onclick="goBackFromChat()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <div id="chat-avatar" class="w-8 h-8 rounded-full avatar-initial text-sm mr-2"></div>
+            <div class="flex-1">
+                <h2 id="chat-staff-name" class="font-semibold text-slate-800 text-sm"></h2>
+                <p id="chat-staff-role" class="text-xs text-slate-400 truncate"></p>
             </div>
         </div>
-
-        <!-- ===== Page: Chat Window ===== -->
-        <div id="page-chat" class="page h-full bg-slate-50">
-            <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
-                <button onclick="goBackFromChat()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <div id="chat-avatar" class="w-8 h-8 rounded-full avatar-initial text-sm mr-2"></div>
-                <div class="flex-1">
-                    <h2 id="chat-staff-name" class="font-semibold text-slate-800 text-sm"></h2>
-                    <p id="chat-staff-role" class="text-xs text-slate-400 truncate"></p>
-                </div>
-            </div>
-            <div id="chat-messages" class="chat-messages px-4 py-4 space-y-3"></div>
-            <div class="bg-white border-t border-slate-100 px-3 py-2 flex items-end gap-2">
-                <textarea id="chat-input" rows="1" placeholder="输入消息..." class="flex-1 resize-none border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 max-h-24" onkeydown="handleChatKeydown(event)"></textarea>
-                <button onclick="sendMessage()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center hover:bg-indigo-600 transition-colors flex-shrink-0">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                </button>
-            </div>
+        <div id="chat-messages" class="chat-messages px-4 py-4 space-y-3"></div>
+        <div class="bg-white border-t border-slate-100 px-3 py-2 flex items-end gap-2">
+            <textarea id="chat-input" rows="1" placeholder="输入消息..." class="flex-1 resize-none border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+            <button onclick="sendMessage()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center hover:bg-indigo-600 transition-colors shadow-sm flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            </button>
         </div>
+    </div>
 
-        <!-- ===== Page: Edit Staff ===== -->
-        <div id="page-edit-staff" class="sub-page">
-            <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
-                <button onclick="closeEditStaff()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <h2 class="font-bold text-slate-800">编辑员工配置</h2>
-                <button onclick="viewStaffConversations()" class="ml-auto text-xs text-indigo-500 font-medium">对话记录</button>
+    <!-- ===== Page: Settings ===== -->
+    <div id="page-settings" class="page h-full">
+        <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100">
+            <button onclick="navigateTo('home')" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h1 class="text-lg font-bold text-slate-800">设置</h1>
+        </div>
+        <div id="settings-content" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <!-- Settings Login Section (shown when not logged in) -->
+            <div id="settings-login-section">
+                <div class="text-center mb-6">
+                    <div class="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-indigo-200">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    </div>
+                    <h2 class="text-lg font-bold text-slate-800">管理员登录</h2>
+                    <p class="text-xs text-slate-400 mt-1">登录后管理所有配置</p>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <input id="settings-login-username" type="text" placeholder="用户名" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors">
+                    </div>
+                    <div>
+                        <input id="settings-login-password" type="password" placeholder="密码" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter')doSettingsLogin()">
+                    </div>
+                    <div id="settings-login-confirm-group" class="hidden">
+                        <input id="settings-login-confirm-pw" type="password" placeholder="确认密码" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter')doSettingsLogin()">
+                    </div>
+                    <div id="settings-login-error" class="text-red-500 text-xs hidden"></div>
+                    <button id="settings-login-btn" onclick="doSettingsLogin()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl py-2.5 text-sm transition-colors shadow-sm shadow-indigo-200">登录</button>
+                    <p id="settings-register-hint" class="hidden text-center text-xs text-slate-400">首次使用？设置管理员账号后自动登录</p>
+                </div>
             </div>
-            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-20">
-                <!-- Basic Info -->
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                    <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center">
-                        <svg class="w-4 h-4 mr-1.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                        基本信息
+
+            <!-- Settings Admin Section (shown when logged in) -->
+            <div id="settings-admin-section" class="hidden space-y-4">
+                <!-- Admin Info Card -->
+                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 border border-indigo-100">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-indigo-500 rounded-full avatar-initial text-sm">A</div>
+                            <div>
+                                <p id="admin-username" class="font-semibold text-slate-800 text-sm">admin</p>
+                                <p class="text-xs text-slate-500">管理员</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="showChangePasswordModal()" class="text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">修改密码</button>
+                            <button onclick="doLogout()" class="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">退出登录</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global Config -->
+                <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                    <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        全局客服配置
                     </h3>
                     <div class="space-y-3">
                         <div>
-                            <label class="text-xs text-slate-500 mb-1 block">员工名称</label>
-                            <input id="edit-name" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">全局欢迎语模板</label>
+                            <textarea id="global-welcome" rows="2" placeholder="所有员工默认欢迎语，如：您好！我是{name}，很高兴为您服务~" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors resize-none"></textarea>
                         </div>
                         <div>
-                            <label class="text-xs text-slate-500 mb-1 block">角色描述</label>
-                            <input id="edit-role" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">全局转人工关键词</label>
+                            <div id="global-transfer-tags" class="flex flex-wrap gap-1 mb-1 min-h-[28px] border border-slate-200 rounded-xl px-2 py-1"></div>
+                            <input id="global-transfer-input" type="text" placeholder="输入关键词后按回车添加" class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter'){event.preventDefault();addGlobalTag('transfer',this.value)}">
                         </div>
                         <div>
-                            <label class="text-xs text-slate-500 mb-1 block">知识库内容</label>
-                            <textarea id="edit-knowledge" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="每行一个FAQ或知识条目"></textarea>
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">全局敏感词过滤</label>
+                            <div id="global-sensitive-tags" class="flex flex-wrap gap-1 mb-1 min-h-[28px] border border-slate-200 rounded-xl px-2 py-1"></div>
+                            <input id="global-sensitive-input" type="text" placeholder="输入敏感词后按回车添加" class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter'){event.preventDefault();addGlobalTag('sensitive',this.value)}">
                         </div>
-                        <div>
-                            <label class="text-xs text-slate-500 mb-1 block">头像颜色</label>
-                            <div class="flex gap-2 flex-wrap">
-                                <button onclick="selectColor('#6366f1')" class="w-7 h-7 rounded-full" style="background:#6366f1"></button>
-                                <button onclick="selectColor('#8b5cf6')" class="w-7 h-7 rounded-full" style="background:#8b5cf6"></button>
-                                <button onclick="selectColor('#ec4899')" class="w-7 h-7 rounded-full" style="background:#ec4899"></button>
-                                <button onclick="selectColor('#f43f5e')" class="w-7 h-7 rounded-full" style="background:#f43f5e"></button>
-                                <button onclick="selectColor('#f97316')" class="w-7 h-7 rounded-full" style="background:#f97316"></button>
-                                <button onclick="selectColor('#eab308')" class="w-7 h-7 rounded-full" style="background:#eab308"></button>
-                                <button onclick="selectColor('#22c55e')" class="w-7 h-7 rounded-full" style="background:#22c55e"></button>
-                                <button onclick="selectColor('#14b8a6')" class="w-7 h-7 rounded-full" style="background:#14b8a6"></button>
-                                <button onclick="selectColor('#06b6d4')" class="w-7 h-7 rounded-full" style="background:#06b6d4"></button>
-                                <button onclick="selectColor('#3b82f6')" class="w-7 h-7 rounded-full" style="background:#3b82f6"></button>
-                            </div>
-                        </div>
+                        <button onclick="saveGlobalConfig()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-xl py-2 transition-colors">保存全局配置</button>
                     </div>
                 </div>
 
-                <!-- Platform -->
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                    <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center">
-                        <svg class="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
-                        平台接入
+                <!-- Platform API Config -->
+                <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                    <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                        平台API配置
                     </h3>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="text-xs text-slate-500 mb-1 block">接入平台</label>
-                            <select id="edit-platform" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                                <option value="通用">通用</option>
-                                <option value="微信">微信</option>
-                                <option value="淘宝">淘宝</option>
-                                <option value="拼多多">拼多多</option>
-                                <option value="京东">京东</option>
-                                <option value="抖音">抖音</option>
-                                <option value="自定义">自定义</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-xs text-slate-500 mb-1 block">Webhook URL（可选）</label>
-                            <input id="edit-webhook-url" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://your-domain.com/api/webhook/wechat">
-                        </div>
-                    </div>
+                    <div id="platform-config-list" class="space-y-3"></div>
                 </div>
 
-                <!-- Customer Service Config -->
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                    <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center">
-                        <svg class="w-4 h-4 mr-1.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-                        客服配置
+                <!-- Message Records -->
+                <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                    <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                        消息记录
                     </h3>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="text-xs text-slate-500 mb-1 block">欢迎语</label>
-                            <textarea id="edit-welcome" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="新客户进入时自动发送的欢迎语"></textarea>
-                        </div>
-                        <div>
-                            <label class="text-xs text-slate-500 mb-1 block">转人工关键词</label>
-                            <div id="transfer-keywords-container" class="border border-slate-200 rounded-lg p-2 min-h-[40px] flex flex-wrap items-center gap-1">
-                                <input id="transfer-keyword-input" type="text" class="flex-1 min-w-[80px] border-none text-sm py-0.5 px-1 focus:shadow-none" placeholder="输入后回车添加" onkeydown="handleTagInput(event, 'transfer-keywords')">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-xs text-slate-500 mb-1 block">转人工提示语</label>
-                            <input id="edit-transfer-msg" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" value="正在为您转接人工客服，请稍候...">
-                        </div>
-                        <div>
-                            <label class="text-xs text-slate-500 mb-1 block">敏感词管理</label>
-                            <div id="sensitive-words-container" class="border border-slate-200 rounded-lg p-2 min-h-[40px] flex flex-wrap items-center gap-1">
-                                <input id="sensitive-word-input" type="text" class="flex-1 min-w-[80px] border-none text-sm py-0.5 px-1 focus:shadow-none" placeholder="输入后回车添加" onkeydown="handleTagInput(event, 'sensitive-words')">
-                            </div>
-                        </div>
-                    </div>
+                    <div id="admin-message-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
                 </div>
 
-                <!-- Auto Reply Rules -->
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-semibold text-slate-700 text-sm flex items-center">
-                            <svg class="w-4 h-4 mr-1.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            关键词自动回复
-                        </h3>
-                        <button onclick="addAutoReplyRule()" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-medium hover:bg-indigo-100">+ 添加规则</button>
-                    </div>
-                    <div id="auto-reply-rules-list" class="space-y-2">
-                        <p id="auto-reply-empty" class="text-xs text-slate-400 text-center py-2">暂无自动回复规则</p>
-                    </div>
-                </div>
-
-                <!-- Stats -->
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                    <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center">
-                        <svg class="w-4 h-4 mr-1.5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <!-- Stats Overview -->
+                <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                    <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                         数据统计
                     </h3>
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-slate-50 rounded-lg p-3 text-center">
-                            <p id="edit-stat-total-conv" class="text-xl font-bold text-slate-800">0</p>
-                            <p class="text-xs text-slate-400 mt-1">总对话数</p>
+                        <div class="bg-indigo-50 rounded-xl p-3 text-center">
+                            <p id="admin-stat-staff" class="text-2xl font-bold text-indigo-600">0</p>
+                            <p class="text-xs text-slate-500 mt-1">员工数量</p>
                         </div>
-                        <div class="bg-slate-50 rounded-lg p-3 text-center">
-                            <p id="edit-stat-today-conv" class="text-xl font-bold text-green-600">0</p>
-                            <p class="text-xs text-slate-400 mt-1">今日对话</p>
+                        <div class="bg-purple-50 rounded-xl p-3 text-center">
+                            <p id="admin-stat-shops" class="text-2xl font-bold text-purple-600">0</p>
+                            <p class="text-xs text-slate-500 mt-1">店铺数量</p>
                         </div>
-                        <div class="bg-slate-50 rounded-lg p-3 text-center">
-                            <p id="edit-stat-total-msg" class="text-xl font-bold text-indigo-600">0</p>
-                            <p class="text-xs text-slate-400 mt-1">总消息数</p>
+                        <div class="bg-green-50 rounded-xl p-3 text-center">
+                            <p id="admin-stat-total-conv" class="text-2xl font-bold text-green-600">0</p>
+                            <p class="text-xs text-slate-500 mt-1">总对话数</p>
                         </div>
-                        <div class="bg-slate-50 rounded-lg p-3 text-center">
-                            <p id="edit-stat-today-msg" class="text-xl font-bold text-amber-600">0</p>
-                            <p class="text-xs text-slate-400 mt-1">今日消息</p>
+                        <div class="bg-orange-50 rounded-xl p-3 text-center">
+                            <p id="admin-stat-total-msg" class="text-2xl font-bold text-orange-600">0</p>
+                            <p class="text-xs text-slate-500 mt-1">总消息数</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex gap-3 pb-4">
-                    <button onclick="deleteStaff()" class="flex-1 bg-red-50 text-red-500 rounded-xl py-3 font-medium text-sm border border-red-200">删除员工</button>
-                    <button onclick="saveStaffEdit()" class="flex-[2] bg-indigo-500 text-white rounded-xl py-3 font-medium text-sm hover:bg-indigo-600 transition-colors">保存配置</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ===== Page: Staff Conversations ===== -->
-        <div id="page-staff-convs" class="sub-page">
-            <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
-                <button onclick="closeStaffConversations()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <h2 id="conv-list-title" class="font-bold text-slate-800">对话记录</h2>
-            </div>
-            <div id="staff-conv-list" class="flex-1 overflow-y-auto px-4 py-3 space-y-2"></div>
-        </div>
-
-        <!-- ===== Page: View Conversation Detail ===== -->
-        <div id="page-conv-detail" class="sub-page bg-slate-50">
-            <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
-                <button onclick="closeConvDetail()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <h2 class="font-bold text-slate-800">对话详情</h2>
-            </div>
-            <div id="conv-detail-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3"></div>
-        </div>
-
-        <!-- ===== Page: Stats Overview ===== -->
-        <div id="page-stats" class="page h-full">
-            <div class="px-4 py-3 bg-white border-b border-slate-100">
-                <h1 class="text-xl font-bold text-slate-800">数据统计</h1>
-            </div>
-            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
-                        <p id="stat-total-conv" class="text-2xl font-bold text-slate-800">0</p>
-                        <p class="text-xs text-slate-400 mt-1">总对话数</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
-                        <p id="stat-today-conv" class="text-2xl font-bold text-green-600">0</p>
-                        <p class="text-xs text-slate-400 mt-1">今日对话</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
-                        <p id="stat-total-msg" class="text-2xl font-bold text-indigo-600">0</p>
-                        <p class="text-xs text-slate-400 mt-1">总消息数</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
-                        <p id="stat-today-msg" class="text-2xl font-bold text-amber-600">0</p>
-                        <p class="text-xs text-slate-400 mt-1">今日消息</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                    <h3 class="font-semibold text-slate-700 mb-3 text-sm">员工对话排行</h3>
-                    <div id="staff-ranking" class="space-y-2">
-                        <p class="text-xs text-slate-400 text-center py-4">暂无数据</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ===== Page: Settings ===== -->
-        <div id="page-settings" class="page h-full">
-            <div class="px-4 py-3 bg-white border-b border-slate-100">
-                <h1 class="text-xl font-bold text-slate-800">系统设置</h1>
-            </div>
-            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                    <h3 class="font-semibold text-slate-700 mb-3 text-sm">AI模型配置</h3>
+                <!-- API Settings -->
+                <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                    <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        API配置
+                    </h3>
                     <div class="space-y-3">
                         <div>
-                            <label class="text-xs text-slate-500 mb-1 block">API Key</label>
-                            <input id="setting-api-key" type="password" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="输入 API Key">
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">API Key</label>
+                            <input id="setting-api-key" type="text" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
                         </div>
                         <div>
-                            <label class="text-xs text-slate-500 mb-1 block">模型 ID</label>
-                            <input id="setting-model-id" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="输入模型 ID">
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">模型ID</label>
+                            <input id="setting-model-id" type="text" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
                         </div>
                         <div>
-                            <label class="text-xs text-slate-500 mb-1 block">API Base URL</label>
-                            <input id="setting-api-url" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="输入 API 地址">
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">API地址</label>
+                            <input id="setting-api-url" type="text" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
                         </div>
+                        <button onclick="saveSettings()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-xl py-2 transition-colors">保存API配置</button>
                     </div>
-                </div>
-                <button onclick="saveSettings()" class="w-full bg-indigo-500 text-white rounded-xl py-3 font-medium text-sm hover:bg-indigo-600 transition-colors">保存设置</button>
-                <div id="settings-toast" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg text-sm shadow-lg z-50">设置已保存</div>
-            </div>
-        </div>
-
-        <!-- ===== Add Staff Modal ===== -->
-        <div id="modal-add-staff" class="hidden fixed inset-0 z-50 flex items-end justify-center">
-            <div class="modal-overlay absolute inset-0" onclick="hideAddStaffModal()"></div>
-            <div class="relative bg-white w-full max-w-lg rounded-t-2xl p-5 pb-8 fade-in max-h-[85vh] overflow-y-auto">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-slate-800">添加客服员工</h3>
-                    <button onclick="hideAddStaffModal()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-sm font-medium text-slate-600 mb-1 block">员工名称 *</label>
-                        <input id="staff-name" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="如：小美、售前顾问">
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-slate-600 mb-1 block">角色描述 *</label>
-                        <input id="staff-role" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="如：专业热情的售前顾问">
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-slate-600 mb-1 block">接入平台</label>
-                        <select id="staff-platform" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
-                            <option value="通用">通用</option>
-                            <option value="微信">微信</option>
-                            <option value="淘宝">淘宝</option>
-                            <option value="拼多多">拼多多</option>
-                            <option value="京东">京东</option>
-                            <option value="抖音">抖音</option>
-                            <option value="自定义">自定义</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-slate-600 mb-1 block">知识库内容</label>
-                        <textarea id="staff-knowledge" rows="5" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="每行一个FAQ或知识条目，如：&#10;Q: 你们的产品多少钱？&#10;A: 基础版99元/月，专业版299元/月"></textarea>
-                    </div>
-                    <button onclick="createStaff()" class="w-full bg-indigo-500 text-white rounded-xl py-3 font-medium text-sm hover:bg-indigo-600 transition-colors">创建员工</button>
                 </div>
             </div>
-        </div>
-
-        <!-- ===== Auto Reply Rule Modal ===== -->
-        <div id="modal-auto-reply" class="hidden fixed inset-0 z-50 flex items-end justify-center">
-            <div class="modal-overlay absolute inset-0" onclick="hideAutoReplyModal()"></div>
-            <div class="relative bg-white w-full max-w-lg rounded-t-2xl p-5 pb-8 fade-in max-h-[85vh] overflow-y-auto">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 id="auto-reply-modal-title" class="text-lg font-bold text-slate-800">添加自动回复规则</h3>
-                    <button onclick="hideAutoReplyModal()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-sm font-medium text-slate-600 mb-1 block">匹配方式</label>
-                        <select id="rule-match-type" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
-                            <option value="contains">包含匹配</option>
-                            <option value="exact">精确匹配</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-slate-600 mb-1 block">触发关键词</label>
-                        <div id="rule-keywords-container" class="border border-slate-200 rounded-lg p-2 min-h-[40px] flex flex-wrap items-center gap-1">
-                            <input id="rule-keyword-input" type="text" class="flex-1 min-w-[80px] border-none text-sm py-0.5 px-1 focus:shadow-none" placeholder="输入关键词后回车" onkeydown="handleTagInput(event, 'rule-keywords')">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-slate-600 mb-1 block">回复内容</label>
-                        <textarea id="rule-reply" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="当用户消息匹配关键词时，自动回复此内容"></textarea>
-                    </div>
-                    <button onclick="saveAutoReplyRule()" class="w-full bg-indigo-500 text-white rounded-xl py-3 font-medium text-sm hover:bg-indigo-600 transition-colors">保存规则</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ===== Bottom Tab Bar ===== -->
-        <div id="tab-bar" class="flex bg-white border-t border-slate-200 py-1 pb-2 flex-shrink-0">
-            <button onclick="switchTab('home')" id="tab-home" class="flex-1 flex flex-col items-center py-1 text-indigo-500">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <span class="text-xs mt-0.5 font-medium">我的员工</span>
-            </button>
-            <button onclick="switchTab('stats')" id="tab-stats" class="flex-1 flex flex-col items-center py-1 text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                <span class="text-xs mt-0.5">数据</span>
-            </button>
-            <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 flex flex-col items-center py-1 text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <span class="text-xs mt-0.5">设置</span>
-            </button>
         </div>
     </div>
 
-    <script>
-        // ===== State =====
-        let currentTab = 'home';
-        let currentStaffId = null;
-        let currentConvId = null;
-        let currentSessionId = null;
-        let staffList = [];
-        let editColor = '#6366f1';
-        let editTransferKeywords = [];
-        let editSensitiveWords = [];
-        let editAutoReplyRules = [];
-        let editingRuleIndex = -1; // -1 = new, >=0 = editing
-        let ruleKeywords = [];
-        let chatFrom = 'home'; // track where chat was opened from
-        const API_BASE = '/api';
+    <!-- ===== Sub Page: Edit Staff ===== -->
+    <div id="page-edit-staff" class="sub-page">
+        <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100">
+            <button onclick="closeEditStaff()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h1 id="edit-title" class="text-lg font-bold text-slate-800">编辑员工</h1>
+        </div>
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <!-- Basic Info -->
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">员工名称</label>
+                <input id="edit-name" type="text" placeholder="如：小蜜" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">角色描述</label>
+                <textarea id="edit-role" rows="2" placeholder="描述这个客服的角色和职责" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">头像颜色</label>
+                <div id="edit-colors" class="flex flex-wrap gap-2"></div>
+            </div>
 
-        // ===== Authentication =====
-        const TOKEN_KEY = 'ai_staff_token';
-        let isLoggedIn = false;
+            <!-- Platform -->
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">平台接入</label>
+                <select id="edit-platform" onchange="onPlatformChange()" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+                    <option value="通用">通用</option>
+                    <option value="微信">微信</option>
+                    <option value="淘宝">淘宝</option>
+                    <option value="拼多多">拼多多</option>
+                    <option value="京东">京东</option>
+                    <option value="抖音">抖音</option>
+                    <option value="自定义">自定义</option>
+                </select>
+            </div>
 
-        function getToken() { return localStorage.getItem(TOKEN_KEY); }
-        function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
-        function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+            <!-- Shop Selection (shown when platform != 通用) -->
+            <div id="shop-section" class="hidden">
+                <label class="text-xs font-medium text-slate-500 mb-1 block">绑定店铺</label>
+                <select id="edit-shop" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+                    <option value="">-- 请选择店铺 --</option>
+                </select>
+                <button onclick="showAddShopModal()" class="mt-2 text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    添加新店铺
+                </button>
+                <p id="shop-platform-status" class="text-xs text-slate-400 mt-1"></p>
+            </div>
 
-        async function authFetch(url, options = {}) {
-            const token = getToken();
-            if (!options.headers) options.headers = {};
-            if (token) options.headers['Authorization'] = 'Bearer ' + token;
-            if (options.body && typeof options.body === 'string') {
-                options.headers['Content-Type'] = 'application/json';
-            }
-            const res = await fetch(url, options);
-            if (res.status === 401) {
-                clearToken();
-                showLoginPage();
-                throw new Error('登录已过期');
-            }
-            return res;
+            <!-- Welcome Message -->
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">欢迎语</label>
+                <input id="edit-welcome" type="text" placeholder="自定义欢迎语（留空使用全局模板）" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            </div>
+
+            <!-- Transfer Keywords -->
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">转人工关键词</label>
+                <div id="edit-transfer-tags" class="flex flex-wrap gap-1 mb-1 min-h-[28px] border border-slate-200 rounded-xl px-2 py-1"></div>
+                <input id="edit-transfer-input" type="text" placeholder="输入关键词后按回车" class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditTag('transfer',this.value)}">
+            </div>
+
+            <!-- Sensitive Words -->
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">敏感词过滤</label>
+                <div id="edit-sensitive-tags" class="flex flex-wrap gap-1 mb-1 min-h-[28px] border border-slate-200 rounded-xl px-2 py-1"></div>
+                <input id="edit-sensitive-input" type="text" placeholder="输入敏感词后按回车" class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditTag('sensitive',this.value)}">
+            </div>
+
+            <!-- Knowledge Base -->
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">知识库（每行一条）</label>
+                <textarea id="edit-kb" rows="4" placeholder="FAQ或知识条目，每行一条" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors resize-none font-mono"></textarea>
+            </div>
+
+            <!-- Auto Reply Rules -->
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="text-xs font-medium text-slate-500">自动回复规则</label>
+                    <button onclick="addAutoReplyRule()" class="text-xs text-indigo-500 hover:text-indigo-700">+ 添加规则</button>
+                </div>
+                <div id="auto-reply-rules-list" class="space-y-2">
+                    <p id="auto-reply-empty" class="text-xs text-slate-400">暂无自动回复规则</p>
+                </div>
+            </div>
+
+            <!-- Transfer Message -->
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">转人工提示语</label>
+                <input id="edit-transfer-msg" type="text" placeholder="正在为您转接人工客服，请稍候..." class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex gap-3 pb-4">
+                <button onclick="saveStaff()" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl py-2.5 text-sm transition-colors shadow-sm">保存</button>
+                <button onclick="closeEditStaff()" class="flex-1 border border-slate-200 text-slate-600 font-medium rounded-xl py-2.5 text-sm transition-colors hover:bg-slate-50">取消</button>
+            </div>
+
+            <!-- Danger Zone -->
+            <div id="edit-danger-zone" class="hidden pb-4">
+                <div class="border border-red-200 rounded-xl p-3">
+                    <p class="text-xs text-red-500 mb-2">删除后无法恢复，相关对话记录也会被清除</p>
+                    <button onclick="confirmDeleteStaff()" class="w-full border border-red-300 text-red-500 font-medium rounded-xl py-2 text-sm hover:bg-red-50 transition-colors">删除此员工</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Sub Page: Stats ===== -->
+    <div id="page-stats" class="sub-page">
+        <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100">
+            <button onclick="closeStats()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h1 class="text-lg font-bold text-slate-800">数据统计</h1>
+        </div>
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-indigo-50 rounded-xl p-3 text-center">
+                    <p id="stat-total-conv" class="text-2xl font-bold text-indigo-600">0</p>
+                    <p class="text-xs text-slate-500 mt-1">总对话数</p>
+                </div>
+                <div class="bg-green-50 rounded-xl p-3 text-center">
+                    <p id="stat-today-conv" class="text-2xl font-bold text-green-600">0</p>
+                    <p class="text-xs text-slate-500 mt-1">今日对话</p>
+                </div>
+                <div class="bg-purple-50 rounded-xl p-3 text-center">
+                    <p id="stat-total-msg" class="text-2xl font-bold text-purple-600">0</p>
+                    <p class="text-xs text-slate-500 mt-1">总消息数</p>
+                </div>
+                <div class="bg-orange-50 rounded-xl p-3 text-center">
+                    <p id="stat-today-msg" class="text-2xl font-bold text-orange-600">0</p>
+                    <p class="text-xs text-slate-500 mt-1">今日消息</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <h3 class="font-semibold text-slate-800 text-sm mb-3">员工排行</h3>
+                <div id="staff-ranking"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Sub Page: Staff Conversations ===== -->
+    <div id="page-staff-convs" class="sub-page">
+        <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100">
+            <button onclick="closeStaffConversations()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h1 id="conv-list-title" class="text-lg font-bold text-slate-800">对话记录</h1>
+        </div>
+        <div id="staff-conv-list" class="flex-1 overflow-y-auto px-4 py-4 space-y-3"></div>
+    </div>
+
+    <!-- ===== Sub Page: Conversation Detail ===== -->
+    <div id="page-conv-detail" class="sub-page">
+        <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100">
+            <button onclick="closeConvDetail()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h1 class="text-lg font-bold text-slate-800">对话详情</h1>
+        </div>
+        <div id="conv-detail-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3"></div>
+    </div>
+
+</div>
+
+<!-- ===== Modals ===== -->
+
+<!-- Add/Edit Staff Modal -->
+<div id="modal-add-staff" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+    <div class="modal-overlay absolute inset-0" onclick="hideAddStaffModal()"></div>
+    <div class="relative bg-white w-full max-w-lg rounded-t-2xl p-6 pb-8 z-10 fade-in">
+        <div class="flex items-center justify-between mb-4">
+            <h2 id="modal-staff-title" class="text-lg font-bold text-slate-800">新建员工</h2>
+            <button onclick="hideAddStaffModal()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+        <div class="space-y-3">
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">员工名称</label>
+                <input id="modal-staff-name" type="text" placeholder="如：小蜜" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">角色描述</label>
+                <textarea id="modal-staff-role" rows="2" placeholder="描述这个客服的角色和职责" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">平台</label>
+                <select id="modal-staff-platform" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+                    <option value="通用">通用</option>
+                    <option value="微信">微信</option>
+                    <option value="淘宝">淘宝</option>
+                    <option value="拼多多">拼多多</option>
+                    <option value="京东">京东</option>
+                    <option value="抖音">抖音</option>
+                    <option value="自定义">自定义</option>
+                </select>
+            </div>
+            <button onclick="quickCreateStaff()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl py-2.5 text-sm transition-colors shadow-sm">创建</button>
+            <button onclick="hideAddStaffModal();openFullEdit(-1)" class="w-full border border-slate-200 text-slate-600 font-medium rounded-xl py-2.5 text-sm transition-colors hover:bg-slate-50">完整配置</button>
+        </div>
+    </div>
+</div>
+
+<!-- Auto Reply Rule Modal -->
+<div id="modal-auto-reply" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+    <div class="modal-overlay absolute inset-0" onclick="hideAutoReplyModal()"></div>
+    <div class="relative bg-white w-full max-w-lg rounded-t-2xl p-6 pb-8 z-10 fade-in">
+        <div class="flex items-center justify-between mb-4">
+            <h2 id="auto-reply-modal-title" class="text-lg font-bold text-slate-800">添加自动回复规则</h2>
+            <button onclick="hideAutoReplyModal()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+        <div class="space-y-3">
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">匹配方式</label>
+                <select id="rule-match-type" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+                    <option value="contains">包含关键词</option>
+                    <option value="exact">精确匹配</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">触发关键词</label>
+                <div id="rule-keywords-tags" class="flex flex-wrap gap-1 mb-1 min-h-[28px] border border-slate-200 rounded-xl px-2 py-1"></div>
+                <input id="rule-keyword-input" type="text" placeholder="输入关键词后按回车" class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter'){event.preventDefault();addRuleKeyword()}">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">回复内容</label>
+                <textarea id="rule-reply" rows="2" placeholder="匹配的自动回复内容" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors resize-none"></textarea>
+            </div>
+            <button onclick="saveAutoReplyRule()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl py-2.5 text-sm transition-colors">保存规则</button>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="modal-change-password" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="modal-overlay absolute inset-0" onclick="hideChangePasswordModal()"></div>
+    <div class="relative bg-white w-80 rounded-2xl p-6 z-10 fade-in">
+        <h3 class="text-lg font-bold text-slate-800 mb-4">修改密码</h3>
+        <div class="space-y-3">
+            <input id="cp-old-pw" type="password" placeholder="旧密码" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            <input id="cp-new-pw" type="password" placeholder="新密码（至少6位）" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            <input id="cp-confirm-pw" type="password" placeholder="确认新密码" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            <div id="cp-error" class="text-red-500 text-xs hidden"></div>
+            <div class="flex gap-2">
+                <button onclick="doChangePassword()" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl py-2 text-sm transition-colors">确认修改</button>
+                <button onclick="hideChangePasswordModal()" class="flex-1 border border-slate-200 text-slate-600 rounded-xl py-2 text-sm hover:bg-slate-50 transition-colors">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Shop Modal -->
+<div id="modal-add-shop" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="modal-overlay absolute inset-0" onclick="hideAddShopModal()"></div>
+    <div class="relative bg-white w-80 rounded-2xl p-6 z-10 fade-in">
+        <h3 class="text-lg font-bold text-slate-800 mb-4">添加店铺</h3>
+        <div class="space-y-3">
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">平台</label>
+                <select id="shop-platform" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+                    <option value="微信">微信</option>
+                    <option value="淘宝">淘宝</option>
+                    <option value="拼多多">拼多多</option>
+                    <option value="京东">京东</option>
+                    <option value="抖音">抖音</option>
+                    <option value="自定义">自定义</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">店铺名称</label>
+                <input id="shop-name" type="text" placeholder="如：旗舰店" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">店铺ID/编号</label>
+                <input id="shop-id-input" type="text" placeholder="店铺的唯一标识" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            </div>
+            <div id="shop-error" class="text-red-500 text-xs hidden"></div>
+            <div class="flex gap-2">
+                <button onclick="doAddShop()" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl py-2 text-sm transition-colors">添加</button>
+                <button onclick="hideAddShopModal()" class="flex-1 border border-slate-200 text-slate-600 rounded-xl py-2 text-sm hover:bg-slate-50 transition-colors">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Platform Config Modal -->
+<div id="modal-platform-config" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="modal-overlay absolute inset-0" onclick="hidePlatformConfigModal()"></div>
+    <div class="relative bg-white w-80 rounded-2xl p-6 z-10 fade-in max-h-[80vh] overflow-y-auto">
+        <h3 id="platform-modal-title" class="text-lg font-bold text-slate-800 mb-4">平台配置</h3>
+        <div id="platform-config-fields" class="space-y-3"></div>
+        <div class="flex gap-2 mt-4">
+            <button onclick="savePlatformConfig()" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl py-2 text-sm transition-colors">保存</button>
+            <button onclick="testPlatformConnection()" class="flex-1 border border-indigo-300 text-indigo-600 rounded-xl py-2 text-sm hover:bg-indigo-50 transition-colors">测试连接</button>
+        </div>
+        <button onclick="hidePlatformConfigModal()" class="w-full mt-2 border border-slate-200 text-slate-600 rounded-xl py-2 text-sm hover:bg-slate-50 transition-colors">取消</button>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="settings-toast" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-sm px-4 py-2 rounded-full shadow-lg z-[100] transition-all"></div>
+
+<script>
+    const API_BASE = '/api';
+    let token = localStorage.getItem('admin_token') || '';
+    let staffList = [];
+    let currentStaffId = null;
+    let currentChatSessionId = 'default';
+    let isCreatingNew = false;
+    let editingStaffId = null;
+    let editSelectedColor = '#6366f1';
+    let editTransferKeywords = [];
+    let editSensitiveWords = [];
+    let editAutoReplyRules = [];
+    let editingRuleIndex = -1;
+    let ruleKeywords = [];
+    let globalTransferKeywords = [];
+    let globalSensitiveWords = [];
+    let platformConfigs = [];
+    let currentEditPlatform = '';
+
+    const AVATAR_COLORS = [
+        "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e",
+        "#f97316", "#eab308", "#22c55e", "#14b8a6",
+        "#06b6d4", "#3b82f6", "#6366f1", "#a855f7"
+    ];
+
+    const PLATFORM_FIELDS = {
+        "微信": [
+            { key: "app_id", label: "AppID", type: "text" },
+            { key: "app_secret", label: "AppSecret", type: "password" },
+            { key: "token", label: "Token", type: "text" },
+            { key: "encoding_aes_key", label: "EncodingAESKey", type: "text" }
+        ],
+        "淘宝": [
+            { key: "app_key", label: "App Key", type: "text" },
+            { key: "app_secret", label: "App Secret", type: "password" },
+            { key: "redirect_uri", label: "回调地址", type: "text" }
+        ],
+        "拼多多": [
+            { key: "client_id", label: "Client ID", type: "text" },
+            { key: "client_secret", label: "Client Secret", type: "password" },
+            { key: "redirect_uri", label: "回调地址", type: "text" }
+        ],
+        "京东": [
+            { key: "app_key", label: "App Key", type: "text" },
+            { key: "app_secret", label: "App Secret", type: "password" },
+            { key: "redirect_uri", label: "回调地址", type: "text" }
+        ],
+        "抖音": [
+            { key: "app_id", label: "App ID", type: "text" },
+            { key: "app_secret", label: "App Secret", type: "password" },
+            { key: "verify_token", label: "Verify Token", type: "text" }
+        ],
+        "自定义": [
+            { key: "api_url", label: "API地址", type: "text" },
+            { key: "api_key", label: "API Key", type: "password" },
+            { key: "custom_field_1", label: "自定义字段1", type: "text" },
+            { key: "custom_field_2", label: "自定义字段2", type: "text" }
+        ]
+    };
+
+    // ===== Auth =====
+    async function authFetch(url, options = {}) {
+        if (!options.headers) options.headers = {};
+        if (token) options.headers['Authorization'] = 'Bearer ' + token;
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+            token = '';
+            localStorage.removeItem('admin_token');
+            updateSettingsUI();
+            throw new Error('请先登录');
         }
+        return res;
+    }
 
-        async function checkAuth() {
-            try {
-                // Check if admin exists
-                const statusRes = await fetch(API_BASE + '/auth/status');
-                const statusData = await statusRes.json();
+    function isLoggedIn() { return !!token; }
 
-                const token = getToken();
-                if (!token) {
-                    showLoginPage(statusData.has_admin);
-                    return;
-                }
+    // ===== Navigation =====
+    function navigateTo(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const target = document.getElementById('page-' + page);
+        if (target) target.classList.add('active');
 
-                // Verify token
-                const meRes = await authFetch(API_BASE + '/auth/me');
-                if (meRes.ok) {
-                    isLoggedIn = true;
-                    showMainApp();
-                } else {
-                    clearToken();
-                    showLoginPage(statusData.has_admin);
-                }
-            } catch (e) {
-                showLoginPage(false);
-            }
+        if (page === 'home') loadStaffList();
+        if (page === 'settings') {
+            updateSettingsUI();
+            if (isLoggedIn()) loadSettingsPage();
         }
+    }
 
-        function showLoginPage(hasAdmin) {
-            // Hide all pages
-            document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); });
-            document.querySelectorAll('.sub-page').forEach(p => { p.classList.remove('active'); });
-            document.getElementById('page-login').classList.add('active');
+    // ===== Init =====
+    async function init() {
+        await loadStaffList();
+        updateSettingsUI();
+    }
 
-            const subtitle = document.getElementById('login-subtitle');
-            const btn = document.getElementById('login-btn');
-            const confirmGroup = document.getElementById('login-confirm-pw-group');
-            const errorDiv = document.getElementById('login-error');
+    // ===== Settings Login =====
+    function updateSettingsUI() {
+        const loginSection = document.getElementById('settings-login-section');
+        const adminSection = document.getElementById('settings-admin-section');
+        if (isLoggedIn()) {
+            loginSection.classList.add('hidden');
+            adminSection.classList.remove('hidden');
+        } else {
+            loginSection.classList.remove('hidden');
+            adminSection.classList.add('hidden');
+            checkAdminExists();
+        }
+    }
 
-            errorDiv.classList.add('hidden');
-            document.getElementById('login-username').value = '';
-            document.getElementById('login-password').value = '';
-            document.getElementById('login-confirm-pw').value = '';
-
-            if (!hasAdmin) {
-                subtitle.textContent = '首次使用，请设置管理员账号';
-                btn.textContent = '注册并登录';
+    async function checkAdminExists() {
+        try {
+            const res = await fetch(API_BASE + '/auth/status');
+            const data = await res.json();
+            const hint = document.getElementById('settings-register-hint');
+            const confirmGroup = document.getElementById('settings-login-confirm-group');
+            const btn = document.getElementById('settings-login-btn');
+            const subtitle = document.getElementById('settings-login-error');
+            if (!data.has_admin) {
+                hint.classList.remove('hidden');
                 confirmGroup.classList.remove('hidden');
-                window._loginMode = 'register';
+                btn.textContent = '设置管理员';
             } else {
-                subtitle.textContent = '登录管理后台';
-                btn.textContent = '登录';
+                hint.classList.add('hidden');
                 confirmGroup.classList.add('hidden');
-                window._loginMode = 'login';
+                btn.textContent = '登录';
             }
+        } catch (e) { console.error(e); }
+    }
+
+    async function doSettingsLogin() {
+        const username = document.getElementById('settings-login-username').value.trim();
+        const password = document.getElementById('settings-login-password').value;
+        const errorEl = document.getElementById('settings-login-error');
+
+        if (!username || !password) {
+            errorEl.textContent = '请输入用户名和密码';
+            errorEl.classList.remove('hidden');
+            return;
         }
 
-        async function doLogin() {
-            const username = document.getElementById('login-username').value.trim();
-            const password = document.getElementById('login-password').value;
-            const errorDiv = document.getElementById('login-error');
-            const btn = document.getElementById('login-btn');
-
-            errorDiv.classList.add('hidden');
-
-            if (!username || !password) {
-                errorDiv.textContent = '请输入用户名和密码';
-                errorDiv.classList.remove('hidden');
+        // Check if registering
+        const confirmGroup = document.getElementById('settings-login-confirm-group');
+        if (!confirmGroup.classList.contains('hidden')) {
+            const confirmPw = document.getElementById('settings-login-confirm-pw').value;
+            if (confirmPw !== password) {
+                errorEl.textContent = '两次密码不一致';
+                errorEl.classList.remove('hidden');
                 return;
             }
-
-            if (window._loginMode === 'register') {
-                const confirmPw = document.getElementById('login-confirm-pw').value;
-                if (password !== confirmPw) {
-                    errorDiv.textContent = '两次输入的密码不一致';
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-                if (password.length < 4) {
-                    errorDiv.textContent = '密码至少4个字符';
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-            }
-
-            btn.disabled = true;
-            btn.textContent = '处理中...';
-
+            // Register
             try {
-                let url, body;
-                if (window._loginMode === 'register') {
-                    url = API_BASE + '/auth/register';
-                } else {
-                    url = API_BASE + '/auth/login';
-                }
-
-                const res = await fetch(url, {
+                const res = await fetch(API_BASE + '/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
+                if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '注册失败'); }
                 const data = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(data.detail || '操作失败');
-                }
-
-                setToken(data.token);
-                isLoggedIn = true;
-                showMainApp();
-                loadStaff();
-                loadStatsOverview();
-                loadSettings();
+                token = data.token;
+                localStorage.setItem('admin_token', token);
+                errorEl.classList.add('hidden');
+                showToast('管理员账号设置成功');
+                updateSettingsUI();
+                loadSettingsPage();
             } catch (e) {
-                errorDiv.textContent = e.message || '操作失败';
-                errorDiv.classList.remove('hidden');
-                btn.disabled = false;
-                btn.textContent = window._loginMode === 'register' ? '注册并登录' : '登录';
+                errorEl.textContent = e.message;
+                errorEl.classList.remove('hidden');
             }
+            return;
         }
 
-        function showMainApp() {
-            document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); });
-            document.querySelectorAll('.sub-page').forEach(p => { p.classList.remove('active'); });
-            document.getElementById('page-home').classList.add('active');
+        // Login
+        try {
+            const res = await fetch(API_BASE + '/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '登录失败'); }
+            const data = await res.json();
+            token = data.token;
+            localStorage.setItem('admin_token', token);
+            errorEl.classList.add('hidden');
+            showToast('登录成功');
+            updateSettingsUI();
+            loadSettingsPage();
+        } catch (e) {
+            errorEl.textContent = e.message;
+            errorEl.classList.remove('hidden');
         }
+    }
 
-        function doLogout() {
-            const token = getToken();
-            if (token) {
-                fetch(API_BASE + '/auth/logout', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token }
-                }).catch(() => {});
-            }
-            clearToken();
-            isLoggedIn = false;
-            checkAuth();
-        }
+    async function doLogout() {
+        try {
+            await authFetch(API_BASE + '/auth/logout', { method: 'POST' });
+        } catch (e) {}
+        token = '';
+        localStorage.removeItem('admin_token');
+        showToast('已退出登录');
+        updateSettingsUI();
+    }
 
-        const PLATFORM_COLORS = {
-            '通用': 'bg-slate-100 text-slate-600',
-            '微信': 'bg-green-100 text-green-700',
-            '淘宝': 'bg-orange-100 text-orange-700',
-            '拼多多': 'bg-red-100 text-red-700',
-            '京东': 'bg-blue-100 text-blue-700',
-            '抖音': 'bg-purple-100 text-purple-700',
-            '自定义': 'bg-indigo-100 text-indigo-700'
+    // ===== Settings Page Loading =====
+    async function loadSettingsPage() {
+        try {
+            // Load admin info
+            const meRes = await authFetch(API_BASE + '/admin/me');
+            const me = await meRes.json();
+            document.getElementById('admin-username').textContent = me.username;
+
+            // Load API settings + global config
+            const settingsRes = await authFetch(API_BASE + '/settings');
+            const settings = await settingsRes.json();
+            document.getElementById('setting-api-key').value = settings.api_key || '';
+            document.getElementById('setting-model-id').value = settings.model_id || '';
+            document.getElementById('setting-api-url').value = settings.api_base_url || '';
+            document.getElementById('global-welcome').value = settings.global_welcome || '';
+            globalTransferKeywords = safeJsonParse(settings.global_transfer_keywords, []);
+            globalSensitiveWords = safeJsonParse(settings.global_sensitive_words, []);
+            renderGlobalTags('transfer');
+            renderGlobalTags('sensitive');
+
+            // Load platforms
+            loadPlatforms();
+
+            // Load stats
+            loadAdminStats();
+
+            // Load messages
+            loadAdminMessages();
+        } catch (e) { console.error('Load settings error:', e); }
+    }
+
+    // ===== Platforms =====
+    async function loadPlatforms() {
+        try {
+            const res = await authFetch(API_BASE + '/admin/platforms');
+            platformConfigs = await res.json();
+            renderPlatformCards();
+        } catch (e) { console.error(e); }
+    }
+
+    function renderPlatformCards() {
+        const container = document.getElementById('platform-config-list');
+        const platformIcons = {
+            "微信": "💬", "淘宝": "🛒", "拼多多": "🏷️",
+            "京东": "📦", "抖音": "🎵", "自定义": "⚙️"
         };
+        let html = '';
+        platformConfigs.forEach(p => {
+            const isConfigured = p.status === '已接入';
+            const statusClass = isConfigured ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500';
+            const statusText = isConfigured ? '已接入 ✓' : '未配置';
+            const icon = platformIcons[p.platform] || '📡';
+            html += `
+            <div class="platform-card flex items-center justify-between cursor-pointer hover:border-indigo-300 transition-colors" onclick="openPlatformConfig('${p.platform}')">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">${icon}</span>
+                    <div>
+                        <p class="font-medium text-slate-800 text-sm">${p.platform}</p>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
 
-        // ===== Init =====
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW error:', err));
-            }
+    function openPlatformConfig(platform) {
+        currentEditPlatform = platform;
+        const config = platformConfigs.find(p => p.platform === platform);
+        const fields = PLATFORM_FIELDS[platform] || [];
+        const configData = config ? (config.config_json || {}) : {};
+
+        document.getElementById('platform-modal-title').textContent = platform + ' API配置';
+
+        let html = '';
+        fields.forEach(f => {
+            const val = configData[f.key] || '';
+            html += `
+            <div>
+                <label class="text-xs font-medium text-slate-500 mb-1 block">${f.label}</label>
+                <input type="${f.type}" data-field="${f.key}" value="${escapeHtml(val)}" placeholder="请输入${f.label}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+            </div>`;
+        });
+        document.getElementById('platform-config-fields').innerHTML = html;
+        document.getElementById('modal-platform-config').classList.remove('hidden');
+    }
+
+    function hidePlatformConfigModal() {
+        document.getElementById('modal-platform-config').classList.add('hidden');
+    }
+
+    async function savePlatformConfig() {
+        const fields = PLATFORM_FIELDS[currentEditPlatform] || [];
+        const config = {};
+        fields.forEach(f => {
+            const el = document.querySelector(`[data-field="${f.key}"]`);
+            if (el) config[f.key] = el.value.trim();
         });
 
-        // ===== Tab switching =====
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.sub-page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('#tab-bar button').forEach(b => {
-                b.classList.remove('text-indigo-500');
-                b.classList.add('text-slate-400');
+        const hasValues = Object.values(config).some(v => v);
+        const status = hasValues ? '已接入' : '未配置';
+
+        try {
+            await authFetch(API_BASE + '/admin/platforms/' + currentEditPlatform, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ config_json: config, status })
             });
+            showToast('平台配置已保存');
+            hidePlatformConfigModal();
+            loadPlatforms();
+        } catch (e) { alert('保存失败: ' + e.message); }
+    }
 
-            const tabBtn = document.getElementById('tab-' + tab);
-            tabBtn.classList.remove('text-slate-400');
-            tabBtn.classList.add('text-indigo-500');
+    async function testPlatformConnection() {
+        try {
+            const res = await authFetch(API_BASE + '/admin/platforms/' + currentEditPlatform + '/test', { method: 'POST' });
+            const data = await res.json();
+            showToast(data.message || '测试通过');
+        } catch (e) { alert('测试失败: ' + e.message); }
+    }
 
-            document.getElementById('page-' + tab).classList.add('active');
+    // ===== Admin Stats =====
+    async function loadAdminStats() {
+        try {
+            const res = await authFetch(API_BASE + '/admin/stats');
+            const data = await res.json();
+            document.getElementById('admin-stat-staff').textContent = data.staff_count;
+            document.getElementById('admin-stat-shops').textContent = data.shop_count || 0;
+            document.getElementById('admin-stat-total-conv').textContent = data.total_conversations;
+            document.getElementById('admin-stat-total-msg').textContent = data.total_messages;
+        } catch (e) { console.error(e); }
+    }
 
-            if (tab === 'home') loadStaff();
-            if (tab === 'stats') loadStatsOverview();
-            if (tab === 'settings') loadSettings();
-        }
-
-        // ===== Staff List =====
-        async function loadStaff() {
-            try {
-                const res = await authFetch(API_BASE + '/staff');
-                staffList = await res.json();
-                renderStaffList();
-            } catch (e) {
-                console.error('Load staff error:', e);
-            }
-        }
-
-        function renderStaffList() {
-            const list = document.getElementById('staff-list');
-            const empty = document.getElementById('empty-state');
-
-            if (staffList.length === 0) {
-                list.innerHTML = '';
-                list.appendChild(empty);
-                empty.classList.remove('hidden');
-                return;
-            }
-
-            empty.classList.add('hidden');
-            let html = '';
-            staffList.forEach(s => {
-                const initial = s.name.charAt(0);
-                const platform = s.platform || '通用';
-                const platClass = PLATFORM_COLORS[platform] || 'bg-slate-100 text-slate-600';
-                html += `
-                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 fade-in">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 rounded-full avatar-initial text-lg flex-shrink-0" style="background:${s.avatar_color || '#6366f1'}">${initial}</div>
-                        <div class="ml-3 flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
-                                <span class="font-semibold text-slate-800 text-sm">${escapeHtml(s.name)}</span>
-                                <span class="tag ${platClass} text-xs">${escapeHtml(platform)}</span>
-                            </div>
-                            <p class="text-xs text-slate-400 truncate mt-0.5">${escapeHtml(s.role_description)}</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
-                        <button onclick="openEditStaff(${s.id})" class="flex-1 text-xs bg-indigo-50 text-indigo-600 py-2 rounded-lg font-medium hover:bg-indigo-100 transition-colors">编辑配置</button>
-                        <button onclick="startChatWithStaff(${s.id})" class="flex-1 text-xs bg-green-50 text-green-600 py-2 rounded-lg font-medium hover:bg-green-100 transition-colors">发起对话</button>
-                    </div>
-                </div>`;
-            });
-            list.innerHTML = html;
-        }
-
-        // ===== Add Staff Modal =====
-        function showAddStaffModal() { document.getElementById('modal-add-staff').classList.remove('hidden'); }
-        function hideAddStaffModal() { document.getElementById('modal-add-staff').classList.add('hidden'); }
-
-        async function createStaff() {
-            const name = document.getElementById('staff-name').value.trim();
-            const role = document.getElementById('staff-role').value.trim();
-            const knowledge = document.getElementById('staff-knowledge').value.trim();
-            const platform = document.getElementById('staff-platform').value;
-
-            if (!name || !role) { alert('请填写员工名称和角色描述'); return; }
-
-            try {
-                await authFetch(API_BASE + '/staff', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, role_description: role, knowledge_base: knowledge, platform })
-                });
-                hideAddStaffModal();
-                document.getElementById('staff-name').value = '';
-                document.getElementById('staff-role').value = '';
-                document.getElementById('staff-knowledge').value = '';
-                document.getElementById('staff-platform').value = '通用';
-                await loadStaff();
-            } catch (e) {
-                alert('创建失败: ' + e.message);
-            }
-        }
-
-        // ===== Chat =====
-        function startChatWithStaff(staffId) {
-            const staff = staffList.find(s => s.id === staffId);
-            if (!staff) return;
-            currentStaffId = staffId;
-            currentSessionId = 'session-' + Date.now();
-            currentConvId = null;
-            chatFrom = 'home';
-
-            document.getElementById('chat-staff-name').textContent = staff.name;
-            document.getElementById('chat-staff-role').textContent = staff.role_description;
-            const avatar = document.getElementById('chat-avatar');
-            avatar.style.background = staff.avatar_color || '#6366f1';
-            avatar.textContent = staff.name.charAt(0);
-
-            document.getElementById('chat-messages').innerHTML = '';
-
-            // Send welcome message if exists
-            if (staff.welcome_message) {
-                appendMessage('assistant', staff.welcome_message);
-            }
-
-            document.getElementById('page-home').classList.remove('active');
-            document.getElementById('page-chat').classList.add('active');
-            document.getElementById('tab-bar').classList.add('hidden');
-        }
-
-        function goBackFromChat() {
-            document.getElementById('page-chat').classList.remove('active');
-            if (chatFrom === 'edit') {
-                document.getElementById('page-edit-staff').classList.add('active');
-            } else {
-                document.getElementById('page-home').classList.add('active');
-                document.getElementById('tab-bar').classList.remove('hidden');
-            }
-            currentStaffId = null;
-            currentConvId = null;
-        }
-
-        function appendMessage(role, content) {
-            const container = document.getElementById('chat-messages');
-            if (role === 'user') {
-                container.innerHTML += `<div class="flex justify-end fade-in"><div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">${escapeHtml(content)}</div></div>`;
-            } else {
-                container.innerHTML += `<div class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">${escapeHtml(content)}</div></div>`;
-            }
-            container.scrollTop = container.scrollHeight;
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const message = input.value.trim();
-            if (!message || !currentStaffId) return;
-
-            input.value = '';
-            input.style.height = 'auto';
-            appendMessage('user', message);
-
-            // Typing indicator
-            const typingId = 'typing-' + Date.now();
-            const container = document.getElementById('chat-messages');
-            container.innerHTML += `<div id="${typingId}" class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-400 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">思考中...</div></div>`;
-            container.scrollTop = container.scrollHeight;
-
-            try {
-                const res = await fetch(API_BASE + '/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ staff_id: currentStaffId, session_id: currentSessionId, message })
-                });
-                const data = await res.json();
-                document.getElementById(typingId)?.remove();
-                appendMessage('assistant', data.reply);
-            } catch (e) {
-                document.getElementById(typingId)?.remove();
-                appendMessage('assistant', '发送失败，请重试');
-            }
-        }
-
-        function handleChatKeydown(e) {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-            const el = e.target;
-            setTimeout(() => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 96) + 'px'; }, 0);
-        }
-
-        // ===== Edit Staff =====
-        async function openEditStaff(staffId) {
-            try {
-                const res = await authFetch(API_BASE + '/staff/' + staffId + '/stats');
-                const stats = await res.json();
-                document.getElementById('edit-stat-total-conv').textContent = stats.total_conversations;
-                document.getElementById('edit-stat-today-conv').textContent = stats.today_conversations;
-                document.getElementById('edit-stat-total-msg').textContent = stats.total_messages;
-                document.getElementById('edit-stat-today-msg').textContent = stats.today_messages;
-            } catch (e) { console.error(e); }
-
-            const staff = staffList.find(s => s.id === staffId);
-            if (!staff) return;
-
-            currentStaffId = staffId;
-            editColor = staff.avatar_color || '#6366f1';
-
-            document.getElementById('edit-name').value = staff.name;
-            document.getElementById('edit-role').value = staff.role_description;
-            // Parse knowledge base
-            let kb = staff.knowledge_base || '[]';
-            try {
-                const kbArr = JSON.parse(kb);
-                document.getElementById('edit-knowledge').value = Array.isArray(kbArr) ? kbArr.join('\n') : kb;
-            } catch { document.getElementById('edit-knowledge').value = kb; }
-
-            document.getElementById('edit-platform').value = staff.platform || '通用';
-            document.getElementById('edit-webhook-url').value = '';
-            document.getElementById('edit-welcome').value = staff.welcome_message || '';
-            document.getElementById('edit-transfer-msg').value = staff.transfer_message || '正在为您转接人工客服，请稍候...';
-
-            // Tags
-            editTransferKeywords = safeJsonParse(staff.transfer_keywords, []);
-            editSensitiveWords = safeJsonParse(staff.sensitive_words, []);
-            editAutoReplyRules = safeJsonParse(staff.auto_reply_rules, []);
-
-            renderTags('transfer-keywords', editTransferKeywords);
-            renderTags('sensitive-words', editSensitiveWords);
-            renderAutoReplyRules();
-
-            document.getElementById('page-home').classList.remove('active');
-            document.getElementById('page-edit-staff').classList.add('active');
-            document.getElementById('tab-bar').classList.add('hidden');
-        }
-
-        function closeEditStaff() {
-            document.getElementById('page-edit-staff').classList.remove('active');
-            document.getElementById('page-home').classList.add('active');
-            document.getElementById('tab-bar').classList.remove('hidden');
-            currentStaffId = null;
-            loadStaff();
-        }
-
-        function selectColor(color) { editColor = color; }
-
-        async function saveStaffEdit() {
-            const name = document.getElementById('edit-name').value.trim();
-            const role = document.getElementById('edit-role').value.trim();
-            if (!name || !role) { alert('请填写员工名称和角色描述'); return; }
-
-            const knowledge = document.getElementById('edit-knowledge').value.trim();
-            const platform = document.getElementById('edit-platform').value;
-            const welcome = document.getElementById('edit-welcome').value;
-            const transferMsg = document.getElementById('edit-transfer-msg').value;
-
-            try {
-                await authFetch(API_BASE + '/staff/' + currentStaffId, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name,
-                        role_description: role,
-                        knowledge_base: knowledge,
-                        avatar_color: editColor,
-                        platform,
-                        welcome_message: welcome,
-                        transfer_keywords: JSON.stringify(editTransferKeywords),
-                        sensitive_words: JSON.stringify(editSensitiveWords),
-                        auto_reply_rules: JSON.stringify(editAutoReplyRules),
-                        transfer_message: transferMsg
-                    })
-                });
-                // Show toast
-                showToast('配置已保存');
-                await loadStaff();
-            } catch (e) {
-                alert('保存失败: ' + e.message);
-            }
-        }
-
-        async function deleteStaff() {
-            if (!confirm('确定删除该员工？所有对话记录也会被删除。')) return;
-            try {
-                await authFetch(API_BASE + '/staff/' + currentStaffId, { method: 'DELETE' });
-                closeEditStaff();
-                showToast('员工已删除');
-            } catch (e) {
-                alert('删除失败: ' + e.message);
-            }
-        }
-
-        // ===== Tag Input =====
-        function handleTagInput(event, type) {
-            if (event.key !== 'Enter') return;
-            event.preventDefault();
-            const input = event.target;
-            const val = input.value.trim();
-            if (!val) return;
-
-            if (type === 'transfer-keywords') {
-                if (!editTransferKeywords.includes(val)) editTransferKeywords.push(val);
-                renderTags('transfer-keywords', editTransferKeywords);
-            } else if (type === 'sensitive-words') {
-                if (!editSensitiveWords.includes(val)) editSensitiveWords.push(val);
-                renderTags('sensitive-words', editSensitiveWords);
-            } else if (type === 'rule-keywords') {
-                if (!ruleKeywords.includes(val)) ruleKeywords.push(val);
-                renderTags('rule-keywords', ruleKeywords);
-            }
-            input.value = '';
-        }
-
-        function renderTags(type, arr) {
-            const container = document.getElementById(type + '-container');
-            const input = container.querySelector('input');
-            // Remove old tags
-            container.querySelectorAll('.tag').forEach(t => t.remove());
-            arr.forEach((item, idx) => {
-                const tag = document.createElement('span');
-                tag.className = 'tag bg-indigo-100 text-indigo-700';
-                tag.innerHTML = `${escapeHtml(item)}<span class="tag-remove" onclick="removeTag('${type}', ${idx})">&times;</span>`;
-                container.insertBefore(tag, input);
-            });
-        }
-
-        function removeTag(type, idx) {
-            if (type === 'transfer-keywords') { editTransferKeywords.splice(idx, 1); renderTags('transfer-keywords', editTransferKeywords); }
-            else if (type === 'sensitive-words') { editSensitiveWords.splice(idx, 1); renderTags('sensitive-words', editSensitiveWords); }
-            else if (type === 'rule-keywords') { ruleKeywords.splice(idx, 1); renderTags('rule-keywords', ruleKeywords); }
-        }
-
-        // ===== Auto Reply Rules =====
-        function renderAutoReplyRules() {
-            const list = document.getElementById('auto-reply-rules-list');
-            const empty = document.getElementById('auto-reply-empty');
-            if (editAutoReplyRules.length === 0) {
-                list.innerHTML = '';
-                list.appendChild(empty);
-                empty.classList.remove('hidden');
-                return;
-            }
-            empty.classList.add('hidden');
-            let html = '';
-            editAutoReplyRules.forEach((rule, idx) => {
-                const matchLabel = rule.match_type === 'exact' ? '精确' : '包含';
-                html += `
-                <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-1 mb-1">
-                                <span class="tag bg-purple-100 text-purple-700 text-xs">${matchLabel}</span>
-                                <span class="text-xs text-slate-500">${(rule.keywords || []).map(k => escapeHtml(k)).join(', ')}</span>
-                            </div>
-                            <p class="text-xs text-slate-600 truncate">回复: ${escapeHtml(rule.reply || '')}</p>
-                        </div>
-                        <div class="flex gap-1 ml-2">
-                            <button onclick="editAutoReplyRule(${idx})" class="text-xs text-indigo-500 p-1">编辑</button>
-                            <button onclick="removeAutoReplyRule(${idx})" class="text-xs text-red-400 p-1">删除</button>
-                        </div>
-                    </div>
-                </div>`;
-            });
-            list.innerHTML = html;
-        }
-
-        function addAutoReplyRule() {
-            editingRuleIndex = -1;
-            ruleKeywords = [];
-            document.getElementById('rule-match-type').value = 'contains';
-            document.getElementById('rule-reply').value = '';
-            renderTags('rule-keywords', ruleKeywords);
-            document.getElementById('auto-reply-modal-title').textContent = '添加自动回复规则';
-            document.getElementById('modal-auto-reply').classList.remove('hidden');
-        }
-
-        function editAutoReplyRule(idx) {
-            editingRuleIndex = idx;
-            const rule = editAutoReplyRules[idx];
-            ruleKeywords = [...(rule.keywords || [])];
-            document.getElementById('rule-match-type').value = rule.match_type || 'contains';
-            document.getElementById('rule-reply').value = rule.reply || '';
-            renderTags('rule-keywords', ruleKeywords);
-            document.getElementById('auto-reply-modal-title').textContent = '编辑自动回复规则';
-            document.getElementById('modal-auto-reply').classList.remove('hidden');
-        }
-
-        function hideAutoReplyModal() { document.getElementById('modal-auto-reply').classList.add('hidden'); }
-
-        function saveAutoReplyRule() {
-            const reply = document.getElementById('rule-reply').value.trim();
-            const matchType = document.getElementById('rule-match-type').value;
-            if (ruleKeywords.length === 0 || !reply) { alert('请添加关键词和回复内容'); return; }
-
-            const rule = { keywords: [...ruleKeywords], reply, match_type: matchType };
-            if (editingRuleIndex >= 0) {
-                editAutoReplyRules[editingRuleIndex] = rule;
-            } else {
-                editAutoReplyRules.push(rule);
-            }
-            renderAutoReplyRules();
-            hideAutoReplyModal();
-        }
-
-        function removeAutoReplyRule(idx) {
-            editAutoReplyRules.splice(idx, 1);
-            renderAutoReplyRules();
-        }
-
-        // ===== Staff Conversations =====
-        async function viewStaffConversations() {
-            try {
-                const res = await authFetch(API_BASE + '/staff/' + currentStaffId + '/conversations');
-                const convs = await res.json();
-                const staff = staffList.find(s => s.id === currentStaffId);
-                document.getElementById('conv-list-title').textContent = (staff ? staff.name : '') + ' - 对话记录';
-                renderStaffConvList(convs);
-            } catch (e) { console.error(e); }
-
-            document.getElementById('page-edit-staff').classList.remove('active');
-            document.getElementById('page-staff-convs').classList.add('active');
-        }
-
-        function renderStaffConvList(convs) {
-            const list = document.getElementById('staff-conv-list');
+    // ===== Admin Messages =====
+    async function loadAdminMessages() {
+        try {
+            const res = await authFetch(API_BASE + '/admin/conversations');
+            const convs = await res.json();
+            const container = document.getElementById('admin-message-list');
             if (convs.length === 0) {
-                list.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">暂无对话记录</p>';
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">暂无消息记录</p>';
                 return;
             }
             let html = '';
-            convs.forEach(conv => {
+            convs.slice(0, 20).forEach(conv => {
                 const msgs = conv.messages || '[]';
                 let parsed = [];
                 try { parsed = JSON.parse(msgs); } catch {}
                 const lastMsg = parsed.length > 0 ? parsed[parsed.length - 1].content.substring(0, 40) : '暂无消息';
                 const time = conv.created_at ? new Date(conv.created_at).toLocaleString('zh-CN') : '';
                 html += `
-                <div onclick="viewConvDetail(${conv.id})" class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-slate-700">${conv.session_id}</span>
-                        <span class="text-xs text-slate-400">${time}</span>
+                <div class="flex items-center gap-2 py-2 border-b border-slate-50">
+                    <div class="w-7 h-7 rounded-full avatar-initial text-xs flex-shrink-0" style="background:${conv.avatar_color || '#6366f1'}">${(conv.staff_name || '?').charAt(0)}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-medium text-slate-700">${escapeHtml(conv.staff_name || '未知')}</p>
+                        <p class="text-xs text-slate-400 truncate">${escapeHtml(lastMsg)}</p>
                     </div>
-                    <p class="text-xs text-slate-400 truncate mt-1">${escapeHtml(lastMsg)}</p>
+                    <span class="text-[10px] text-slate-400 flex-shrink-0">${time}</span>
                 </div>`;
             });
-            list.innerHTML = html;
+            container.innerHTML = html;
+        } catch (e) { console.error(e); }
+    }
+
+    // ===== Global Config =====
+    function addGlobalTag(type, value) {
+        value = value.trim();
+        if (!value) return;
+        if (type === 'transfer') {
+            if (!globalTransferKeywords.includes(value)) {
+                globalTransferKeywords.push(value);
+                renderGlobalTags('transfer');
+            }
+        } else if (type === 'sensitive') {
+            if (!globalSensitiveWords.includes(value)) {
+                globalSensitiveWords.push(value);
+                renderGlobalTags('sensitive');
+            }
+        }
+        const input = document.getElementById(type === 'transfer' ? 'global-transfer-input' : 'global-sensitive-input');
+        input.value = '';
+    }
+
+    function renderGlobalTags(type) {
+        const container = document.getElementById(type === 'transfer' ? 'global-transfer-tags' : 'global-sensitive-tags');
+        const arr = type === 'transfer' ? globalTransferKeywords : globalSensitiveWords;
+        const bgClass = type === 'transfer' ? 'bg-blue-100 text-blue-700' : 'bg-red-50 text-red-600';
+        let html = '';
+        arr.forEach((word, idx) => {
+            html += `<span class="tag ${bgClass}">${escapeHtml(word)}<span class="tag-remove" onclick="removeGlobalTag('${type}',${idx})">&times;</span></span>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function removeGlobalTag(type, idx) {
+        if (type === 'transfer') {
+            globalTransferKeywords.splice(idx, 1);
+            renderGlobalTags('transfer');
+        } else {
+            globalSensitiveWords.splice(idx, 1);
+            renderGlobalTags('sensitive');
+        }
+    }
+
+    async function saveGlobalConfig() {
+        // Global config is stored in settings table
+        try {
+            await authFetch(API_BASE + '/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    global_welcome: document.getElementById('global-welcome').value.trim(),
+                    global_transfer_keywords: JSON.stringify(globalTransferKeywords),
+                    global_sensitive_words: JSON.stringify(globalSensitiveWords)
+                })
+            });
+            showToast('全局配置已保存');
+        } catch (e) { alert('保存失败: ' + e.message); }
+    }
+
+    // ===== Change Password =====
+    function showChangePasswordModal() {
+        document.getElementById('cp-old-pw').value = '';
+        document.getElementById('cp-new-pw').value = '';
+        document.getElementById('cp-confirm-pw').value = '';
+        document.getElementById('cp-error').classList.add('hidden');
+        document.getElementById('modal-change-password').classList.remove('hidden');
+    }
+
+    function hideChangePasswordModal() {
+        document.getElementById('modal-change-password').classList.add('hidden');
+    }
+
+    async function doChangePassword() {
+        const oldPw = document.getElementById('cp-old-pw').value;
+        const newPw = document.getElementById('cp-new-pw').value;
+        const confirmPw = document.getElementById('cp-confirm-pw').value;
+        const errorEl = document.getElementById('cp-error');
+
+        if (!oldPw || !newPw || !confirmPw) {
+            errorEl.textContent = '请填写所有字段';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        if (newPw.length < 6) {
+            errorEl.textContent = '新密码至少6位';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        if (newPw !== confirmPw) {
+            errorEl.textContent = '两次新密码不一致';
+            errorEl.classList.remove('hidden');
+            return;
         }
 
-        function closeStaffConversations() {
-            document.getElementById('page-staff-convs').classList.remove('active');
+        try {
+            const res = await authFetch(API_BASE + '/admin/password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ old_password: oldPw, new_password: newPw })
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '修改失败'); }
+            showToast('密码修改成功');
+            hideChangePasswordModal();
+        } catch (e) {
+            errorEl.textContent = e.message;
+            errorEl.classList.remove('hidden');
+        }
+    }
+
+    // ===== Staff List =====
+    async function loadStaffList() {
+        try {
+            const res = await fetch(API_BASE + '/staff');
+            staffList = await res.json();
+            renderStaffList();
+        } catch (e) { console.error('Load staff error:', e); }
+    }
+
+    function renderStaffList() {
+        const list = document.getElementById('staff-list');
+        const empty = document.getElementById('empty-state');
+
+        if (staffList.length === 0) {
+            list.innerHTML = '';
+            list.appendChild(empty);
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+
+        let html = '';
+        staffList.forEach(staff => {
+            const platformBadge = staff.platform && staff.platform !== '通用'
+                ? `<span class="tag bg-blue-50 text-blue-600 text-[10px]">${escapeHtml(staff.platform)}</span>`
+                : '';
+            html += `
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full avatar-initial text-lg flex-shrink-0" style="background:${staff.avatar_color || '#6366f1'}">${staff.name.charAt(0)}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-slate-800">${escapeHtml(staff.name)}</h3>
+                            ${platformBadge}
+                        </div>
+                        <p class="text-xs text-slate-500 truncate mt-0.5">${escapeHtml(staff.role_description)}</p>
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick="openChat(${staff.id})" class="w-8 h-8 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center hover:bg-indigo-100 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                        </button>
+                        <button onclick="openEditStaff(${staff.id})" class="w-8 h-8 bg-slate-50 text-slate-500 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    // ===== Chat =====
+    function openChat(staffId) {
+        currentStaffId = staffId;
+        currentChatSessionId = 'session-' + staffId + '-' + Date.now();
+        const staff = staffList.find(s => s.id === staffId);
+        if (!staff) return;
+
+        document.getElementById('chat-staff-name').textContent = staff.name;
+        document.getElementById('chat-staff-role').textContent = staff.role_description;
+        const avatar = document.getElementById('chat-avatar');
+        avatar.style.background = staff.avatar_color || '#6366f1';
+        avatar.textContent = staff.name.charAt(0);
+
+        document.getElementById('chat-messages').innerHTML = '';
+        document.getElementById('chat-input').value = '';
+
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-chat').classList.add('active');
+
+        // Send welcome message if set
+        const welcome = staff.welcome_message || '';
+        if (welcome) {
+            addChatBubble('assistant', welcome);
+        }
+    }
+
+    function goBackFromChat() {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-home').classList.add('active');
+        loadStaffList();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (!message || !currentStaffId) return;
+
+        input.value = '';
+        input.style.height = 'auto';
+        addChatBubble('user', message);
+
+        // Typing indicator
+        const typing = document.createElement('div');
+        typing.id = 'typing-indicator';
+        typing.className = 'flex justify-start fade-in';
+        typing.innerHTML = '<div class="msg-bubble bg-white text-slate-400 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">思考中...</div>';
+        document.getElementById('chat-messages').appendChild(typing);
+        scrollChat();
+
+        try {
+            const res = await fetch(API_BASE + '/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    staff_id: currentStaffId,
+                    session_id: currentChatSessionId,
+                    message
+                })
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '发送失败'); }
+            const data = await res.json();
+
+            typing.remove();
+            addChatBubble('assistant', data.reply);
+        } catch (e) {
+            typing.remove();
+            addChatBubble('assistant', '⚠️ ' + e.message);
+        }
+    }
+
+    function addChatBubble(role, content) {
+        const container = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} fade-in`;
+
+        if (role === 'user') {
+            div.innerHTML = `<div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">${escapeHtml(content)}</div>`;
+        } else {
+            div.innerHTML = `<div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">${escapeHtml(content)}</div>`;
+        }
+        container.appendChild(div);
+        scrollChat();
+    }
+
+    function scrollChat() {
+        const c = document.getElementById('chat-messages');
+        setTimeout(() => c.scrollTop = c.scrollHeight, 50);
+    }
+
+    // ===== Staff CRUD =====
+    function showAddStaffModal() {
+        if (!isLoggedIn()) {
+            navigateTo('settings');
+            showToast('请先登录后再创建员工');
+            return;
+        }
+        document.getElementById('modal-staff-name').value = '';
+        document.getElementById('modal-staff-role').value = '';
+        document.getElementById('modal-staff-platform').value = '通用';
+        document.getElementById('modal-add-staff').classList.remove('hidden');
+    }
+
+    function hideAddStaffModal() { document.getElementById('modal-add-staff').classList.add('hidden'); }
+
+    async function quickCreateStaff() {
+        const name = document.getElementById('modal-staff-name').value.trim();
+        const role = document.getElementById('modal-staff-role').value.trim();
+        const platform = document.getElementById('modal-staff-platform').value;
+        if (!name) { alert('请输入员工名称'); return; }
+        if (!role) { alert('请输入角色描述'); return; }
+
+        try {
+            const res = await authFetch(API_BASE + '/staff', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, role_description: role, platform })
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '创建失败'); }
+            hideAddStaffModal();
+            await loadStaffList();
+            showToast('创建成功');
+        } catch (e) { alert(e.message); }
+    }
+
+    function openEditStaff(staffId) {
+        if (!isLoggedIn()) {
+            navigateTo('settings');
+            showToast('请先登录后再编辑员工');
+            return;
+        }
+        const staff = staffList.find(s => s.id === staffId);
+        if (!staff) return;
+
+        editingStaffId = staffId;
+        document.getElementById('edit-title').textContent = '编辑 - ' + staff.name;
+        document.getElementById('edit-name').value = staff.name;
+        document.getElementById('edit-role').value = staff.role_description;
+        document.getElementById('edit-platform').value = staff.platform || '通用';
+        document.getElementById('edit-welcome').value = staff.welcome_message || '';
+        document.getElementById('edit-transfer-msg').value = staff.transfer_message || '正在为您转接人工客服，请稍候...';
+
+        // Knowledge base
+        const kb = safeJsonParse(staff.knowledge_base, []);
+        document.getElementById('edit-kb').value = kb.join('\n');
+
+        // Tags
+        editTransferKeywords = safeJsonParse(staff.transfer_keywords, []);
+        editSensitiveWords = safeJsonParse(staff.sensitive_words, []);
+        editAutoReplyRules = safeJsonParse(staff.auto_reply_rules, []);
+        renderTags('transfer-keywords', editTransferKeywords);
+        renderTags('sensitive-words', editSensitiveWords);
+        renderAutoReplyRules();
+
+        // Colors
+        editSelectedColor = staff.avatar_color || '#6366f1';
+        renderColorPicker();
+
+        // Danger zone
+        document.getElementById('edit-danger-zone').classList.remove('hidden');
+
+        // Shop section
+        onPlatformChange();
+
+        document.getElementById('page-edit-staff').classList.add('active');
+    }
+
+    function openFullEdit(staffId) {
+        if (staffId === -1) {
+            // New staff full edit
+            editingStaffId = null;
+            document.getElementById('edit-title').textContent = '新建员工';
+            document.getElementById('edit-name').value = '';
+            document.getElementById('edit-role').value = '';
+            document.getElementById('edit-platform').value = '通用';
+            document.getElementById('edit-welcome').value = '';
+            document.getElementById('edit-transfer-msg').value = '正在为您转接人工客服，请稍候...';
+            document.getElementById('edit-kb').value = '';
+            editTransferKeywords = [];
+            editSensitiveWords = [];
+            editAutoReplyRules = [];
+            renderTags('transfer-keywords', editTransferKeywords);
+            renderTags('sensitive-words', editSensitiveWords);
+            renderAutoReplyRules();
+            editSelectedColor = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
+            renderColorPicker();
+            document.getElementById('edit-danger-zone').classList.add('hidden');
+            onPlatformChange();
             document.getElementById('page-edit-staff').classList.add('active');
         }
+    }
 
-        async function viewConvDetail(convId) {
-            try {
-                const res = await authFetch(API_BASE + '/conversations/' + convId);
-                const conv = await res.json();
-                const msgs = conv.messages || [];
-                const container = document.getElementById('conv-detail-messages');
-                let html = '';
-                msgs.forEach(msg => {
-                    if (msg.role === 'user') {
-                        html += `<div class="flex justify-end fade-in"><div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">${escapeHtml(msg.content)}</div></div>`;
+    function closeEditStaff() { document.getElementById('page-edit-staff').classList.remove('active'); }
+
+    async function saveStaff() {
+        const name = document.getElementById('edit-name').value.trim();
+        const role = document.getElementById('edit-role').value.trim();
+        if (!name || !role) { alert('名称和角色描述不能为空'); return; }
+
+        const payload = {
+            name,
+            role_description: role,
+            avatar_color: editSelectedColor,
+            platform: document.getElementById('edit-platform').value,
+            welcome_message: document.getElementById('edit-welcome').value.trim(),
+            transfer_keywords: JSON.stringify(editTransferKeywords),
+            sensitive_words: JSON.stringify(editSensitiveWords),
+            auto_reply_rules: JSON.stringify(editAutoReplyRules),
+            transfer_message: document.getElementById('edit-transfer-msg').value.trim(),
+            knowledge_base: document.getElementById('edit-kb').value
+        };
+
+        // Shop ID
+        const shopSelect = document.getElementById('edit-shop');
+        if (shopSelect && shopSelect.value) {
+            payload.shop_id = parseInt(shopSelect.value);
+        } else {
+            payload.shop_id = null;
+        }
+
+        try {
+            let url, method;
+            if (editingStaffId) {
+                url = API_BASE + '/staff/' + editingStaffId;
+                method = 'PUT';
+            } else {
+                url = API_BASE + '/staff';
+                method = 'POST';
+            }
+            const res = await authFetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '保存失败'); }
+            closeEditStaff();
+            await loadStaffList();
+            showToast('保存成功');
+        } catch (e) { alert(e.message); }
+    }
+
+    async function confirmDeleteStaff() {
+        if (!editingStaffId) return;
+        if (!confirm('确定要删除此员工吗？相关对话记录也会被清除。')) return;
+
+        try {
+            const res = await authFetch(API_BASE + '/staff/' + editingStaffId, { method: 'DELETE' });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '删除失败'); }
+            closeEditStaff();
+            await loadStaffList();
+            showToast('已删除');
+        } catch (e) { alert(e.message); }
+    }
+
+    function renderColorPicker() {
+        const container = document.getElementById('edit-colors');
+        let html = '';
+        AVATAR_COLORS.forEach(color => {
+            const selected = color === editSelectedColor;
+            html += `<button onclick="editSelectedColor='${color}';renderColorPicker()" class="w-8 h-8 rounded-full transition-transform ${selected ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110' : ''}" style="background:${color}"></button>`;
+        });
+        container.innerHTML = html;
+    }
+
+    // ===== Platform/Shop in Edit =====
+    async function onPlatformChange() {
+        const platform = document.getElementById('edit-platform').value;
+        const shopSection = document.getElementById('shop-section');
+        const statusEl = document.getElementById('shop-platform-status');
+
+        if (platform === '通用') {
+            shopSection.classList.add('hidden');
+            return;
+        }
+
+        shopSection.classList.remove('hidden');
+
+        // Load shops for this platform
+        try {
+            const res = await fetch(API_BASE + '/admin/shops').catch(() => null);
+            if (res && res.ok) {
+                const shops = await res.json();
+                const filtered = shops.filter(s => s.platform === platform);
+                const select = document.getElementById('edit-shop');
+                let html = '<option value="">-- 请选择店铺 --</option>';
+                filtered.forEach(s => {
+                    const selected = editingStaffId && staffList.find(st => st.id === editingStaffId)?.shop_id == s.id ? 'selected' : '';
+                    html += `<option value="${s.id}" ${selected}>${escapeHtml(s.shop_name)} (${escapeHtml(s.shop_id)})</option>`;
+                });
+                select.innerHTML = html;
+
+                // Check platform config status
+                if (platformConfigs.length > 0) {
+                    const pConfig = platformConfigs.find(p => p.platform === platform);
+                    if (pConfig && pConfig.status === '已接入') {
+                        statusEl.textContent = '✓ 该平台API已接入';
+                        statusEl.className = 'text-xs text-green-500 mt-1';
                     } else {
-                        html += `<div class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">${escapeHtml(msg.content)}</div></div>`;
+                        statusEl.textContent = '该平台API未配置，可在设置中配置';
+                        statusEl.className = 'text-xs text-slate-400 mt-1';
                     }
-                });
-                if (!html) html = '<p class="text-sm text-slate-400 text-center py-8">该对话暂无消息</p>';
-                container.innerHTML = html;
-            } catch (e) { console.error(e); }
-
-            document.getElementById('page-staff-convs').classList.remove('active');
-            document.getElementById('page-conv-detail').classList.add('active');
-        }
-
-        function closeConvDetail() {
-            document.getElementById('page-conv-detail').classList.remove('active');
-            document.getElementById('page-staff-convs').classList.add('active');
-        }
-
-        // ===== Stats Overview =====
-        async function loadStatsOverview() {
-            try {
-                const res = await authFetch(API_BASE + '/stats/overview');
-                const data = await res.json();
-                document.getElementById('stat-total-conv').textContent = data.total_conversations;
-                document.getElementById('stat-today-conv').textContent = data.today_conversations;
-                document.getElementById('stat-total-msg').textContent = data.total_messages;
-                document.getElementById('stat-today-msg').textContent = data.today_messages;
-
-                const ranking = document.getElementById('staff-ranking');
-                if (data.staff_ranking && data.staff_ranking.length > 0) {
-                    let html = '';
-                    data.staff_ranking.forEach((s, i) => {
-                        const medals = ['🥇', '🥈', '🥉'];
-                        const medal = medals[i] || (i + 1);
-                        html += `
-                        <div class="flex items-center py-2 border-b border-slate-50 last:border-0">
-                            <span class="w-8 text-center text-sm">${medal}</span>
-                            <div class="w-8 h-8 rounded-full avatar-initial text-xs mx-2" style="background:${s.avatar_color || '#6366f1'}">${s.name.charAt(0)}</div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-slate-700">${escapeHtml(s.name)}</p>
-                                <p class="text-xs text-slate-400">${s.conversations} 对话 · ${s.messages} 消息</p>
-                            </div>
-                        </div>`;
-                    });
-                    ranking.innerHTML = html;
-                } else {
-                    ranking.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">暂无数据</p>';
                 }
-            } catch (e) { console.error(e); }
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function showAddShopModal() {
+        document.getElementById('shop-name').value = '';
+        document.getElementById('shop-id-input').value = '';
+        const platform = document.getElementById('edit-platform').value;
+        if (platform && platform !== '通用') {
+            document.getElementById('shop-platform').value = platform;
+        }
+        document.getElementById('shop-error').classList.add('hidden');
+        document.getElementById('modal-add-shop').classList.remove('hidden');
+    }
+
+    function hideAddShopModal() { document.getElementById('modal-add-shop').classList.add('hidden'); }
+
+    async function doAddShop() {
+        const platform = document.getElementById('shop-platform').value;
+        const shopName = document.getElementById('shop-name').value.trim();
+        const shopId = document.getElementById('shop-id-input').value.trim();
+        const errorEl = document.getElementById('shop-error');
+
+        if (!shopName || !shopId) {
+            errorEl.textContent = '请填写店铺名称和ID';
+            errorEl.classList.remove('hidden');
+            return;
         }
 
-        // ===== Settings =====
-        async function loadSettings() {
-            try {
-                const res = await authFetch(API_BASE + '/settings');
-                const data = await res.json();
-                document.getElementById('setting-api-key').value = data.api_key || '';
-                document.getElementById('setting-model-id').value = data.model_id || '';
-                document.getElementById('setting-api-url').value = data.api_base_url || '';
-            } catch (e) { console.error('Load settings error:', e); }
+        try {
+            const res = await authFetch(API_BASE + '/admin/shops', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ platform, shop_name: shopName, shop_id: shopId })
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '添加失败'); }
+            showToast('店铺已添加');
+            hideAddShopModal();
+            onPlatformChange(); // Refresh shop list
+        } catch (e) {
+            errorEl.textContent = e.message;
+            errorEl.classList.remove('hidden');
         }
+    }
 
-        async function saveSettings() {
-            try {
-                await authFetch(API_BASE + '/settings', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        api_key: document.getElementById('setting-api-key').value.trim(),
-                        model_id: document.getElementById('setting-model-id').value.trim(),
-                        api_base_url: document.getElementById('setting-api-url').value.trim()
-                    })
-                });
-                showToast('设置已保存');
-            } catch (e) { alert('保存失败: ' + e.message); }
-        }
+    // ===== Tags =====
+    function renderTags(type, arr) {
+        const containerId = type === 'transfer-keywords' ? 'edit-transfer-tags' : 'edit-sensitive-tags';
+        const container = document.getElementById(containerId);
+        const bgClass = type === 'transfer-keywords' ? 'bg-blue-100 text-blue-700' : 'bg-red-50 text-red-600';
+        let html = '';
+        arr.forEach((word, idx) => {
+            html += `<span class="tag ${bgClass}">${escapeHtml(word)}<span class="tag-remove" onclick="removeTag('${type}',${idx})">&times;</span></span>`;
+        });
+        container.innerHTML = html;
+    }
 
-        // ===== Utils =====
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+    function addEditTag(type, value) {
+        value = value.trim();
+        if (!value) return;
+        if (type === 'transfer') {
+            if (!editTransferKeywords.includes(value)) { editTransferKeywords.push(value); renderTags('transfer-keywords', editTransferKeywords); }
+        } else {
+            if (!editSensitiveWords.includes(value)) { editSensitiveWords.push(value); renderTags('sensitive-words', editSensitiveWords); }
         }
+        const input = document.getElementById(type === 'transfer' ? 'edit-transfer-input' : 'edit-sensitive-input');
+        input.value = '';
+    }
 
-        function safeJsonParse(str, fallback) {
-            try { return JSON.parse(str); } catch { return fallback; }
-        }
+    function removeTag(type, idx) {
+        if (type === 'transfer-keywords') { editTransferKeywords.splice(idx, 1); renderTags('transfer-keywords', editTransferKeywords); }
+        else if (type === 'sensitive-words') { editSensitiveWords.splice(idx, 1); renderTags('sensitive-words', editSensitiveWords); }
+        else if (type === 'rule-keywords') { ruleKeywords.splice(idx, 1); renderTags('rule-keywords', ruleKeywords); }
+    }
 
-        function showToast(msg) {
-            const toast = document.getElementById('settings-toast');
-            toast.textContent = msg;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 2000);
+    // ===== Auto Reply Rules =====
+    function renderAutoReplyRules() {
+        const list = document.getElementById('auto-reply-rules-list');
+        const empty = document.getElementById('auto-reply-empty');
+        if (editAutoReplyRules.length === 0) {
+            list.innerHTML = '';
+            list.appendChild(empty);
+            empty.classList.remove('hidden');
+            return;
         }
-    </script>
+        empty.classList.add('hidden');
+        let html = '';
+        editAutoReplyRules.forEach((rule, idx) => {
+            const matchLabel = rule.match_type === 'exact' ? '精确' : '包含';
+            html += `
+            <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1 mb-1">
+                            <span class="tag bg-purple-100 text-purple-700 text-xs">${matchLabel}</span>
+                            <span class="text-xs text-slate-500">${(rule.keywords || []).map(k => escapeHtml(k)).join(', ')}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 truncate">回复: ${escapeHtml(rule.reply || '')}</p>
+                    </div>
+                    <div class="flex gap-1 ml-2">
+                        <button onclick="editAutoReplyRule(${idx})" class="text-xs text-indigo-500 p-1">编辑</button>
+                        <button onclick="removeAutoReplyRule(${idx})" class="text-xs text-red-400 p-1">删除</button>
+                    </div>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    function addAutoReplyRule() {
+        editingRuleIndex = -1;
+        ruleKeywords = [];
+        document.getElementById('rule-match-type').value = 'contains';
+        document.getElementById('rule-reply').value = '';
+        renderTags('rule-keywords', ruleKeywords);
+        document.getElementById('auto-reply-modal-title').textContent = '添加自动回复规则';
+        document.getElementById('modal-auto-reply').classList.remove('hidden');
+    }
+
+    function editAutoReplyRule(idx) {
+        editingRuleIndex = idx;
+        const rule = editAutoReplyRules[idx];
+        ruleKeywords = [...(rule.keywords || [])];
+        document.getElementById('rule-match-type').value = rule.match_type || 'contains';
+        document.getElementById('rule-reply').value = rule.reply || '';
+        renderTags('rule-keywords', ruleKeywords);
+        document.getElementById('auto-reply-modal-title').textContent = '编辑自动回复规则';
+        document.getElementById('modal-auto-reply').classList.remove('hidden');
+    }
+
+    function hideAutoReplyModal() { document.getElementById('modal-auto-reply').classList.add('hidden'); }
+
+    function addRuleKeyword() {
+        const input = document.getElementById('rule-keyword-input');
+        const val = input.value.trim();
+        if (val && !ruleKeywords.includes(val)) {
+            ruleKeywords.push(val);
+            renderTags('rule-keywords', ruleKeywords);
+        }
+        input.value = '';
+    }
+
+    function saveAutoReplyRule() {
+        const reply = document.getElementById('rule-reply').value.trim();
+        const matchType = document.getElementById('rule-match-type').value;
+        if (ruleKeywords.length === 0 || !reply) { alert('请添加关键词和回复内容'); return; }
+
+        const rule = { keywords: [...ruleKeywords], reply, match_type: matchType };
+        if (editingRuleIndex >= 0) {
+            editAutoReplyRules[editingRuleIndex] = rule;
+        } else {
+            editAutoReplyRules.push(rule);
+        }
+        renderAutoReplyRules();
+        hideAutoReplyModal();
+    }
+
+    function removeAutoReplyRule(idx) {
+        editAutoReplyRules.splice(idx, 1);
+        renderAutoReplyRules();
+    }
+
+    // ===== Stats =====
+    function closeStats() {
+        document.getElementById('page-stats').classList.remove('active');
+        document.getElementById('page-home').classList.add('active');
+    }
+
+    // ===== Staff Conversations =====
+    async function viewStaffConversations() {
+        try {
+            const res = await authFetch(API_BASE + '/staff/' + currentStaffId + '/conversations');
+            const convs = await res.json();
+            const staff = staffList.find(s => s.id === currentStaffId);
+            document.getElementById('conv-list-title').textContent = (staff ? staff.name : '') + ' - 对话记录';
+            renderStaffConvList(convs);
+        } catch (e) { console.error(e); }
+
+        document.getElementById('page-edit-staff').classList.remove('active');
+        document.getElementById('page-staff-convs').classList.add('active');
+    }
+
+    function renderStaffConvList(convs) {
+        const list = document.getElementById('staff-conv-list');
+        if (convs.length === 0) {
+            list.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">暂无对话记录</p>';
+            return;
+        }
+        let html = '';
+        convs.forEach(conv => {
+            const msgs = conv.messages || '[]';
+            let parsed = [];
+            try { parsed = JSON.parse(msgs); } catch {}
+            const lastMsg = parsed.length > 0 ? parsed[parsed.length - 1].content.substring(0, 40) : '暂无消息';
+            const time = conv.created_at ? new Date(conv.created_at).toLocaleString('zh-CN') : '';
+            html += `
+            <div onclick="viewConvDetail(${conv.id})" class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-slate-700">${conv.session_id}</span>
+                    <span class="text-xs text-slate-400">${time}</span>
+                </div>
+                <p class="text-xs text-slate-400 truncate mt-1">${escapeHtml(lastMsg)}</p>
+            </div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    function closeStaffConversations() {
+        document.getElementById('page-staff-convs').classList.remove('active');
+        document.getElementById('page-edit-staff').classList.add('active');
+    }
+
+    async function viewConvDetail(convId) {
+        try {
+            const res = await authFetch(API_BASE + '/conversations/' + convId);
+            const conv = await res.json();
+            const msgs = conv.messages || [];
+            const container = document.getElementById('conv-detail-messages');
+            let html = '';
+            msgs.forEach(msg => {
+                if (msg.role === 'user') {
+                    html += `<div class="flex justify-end fade-in"><div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">${escapeHtml(msg.content)}</div></div>`;
+                } else {
+                    html += `<div class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">${escapeHtml(msg.content)}</div></div>`;
+                }
+            });
+            if (!html) html = '<p class="text-sm text-slate-400 text-center py-8">该对话暂无消息</p>';
+            container.innerHTML = html;
+        } catch (e) { console.error(e); }
+
+        document.getElementById('page-staff-convs').classList.remove('active');
+        document.getElementById('page-conv-detail').classList.add('active');
+    }
+
+    function closeConvDetail() {
+        document.getElementById('page-conv-detail').classList.remove('active');
+        document.getElementById('page-staff-convs').classList.add('active');
+    }
+
+    // ===== Settings API =====
+    async function saveSettings() {
+        try {
+            await authFetch(API_BASE + '/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    api_key: document.getElementById('setting-api-key').value.trim(),
+                    model_id: document.getElementById('setting-model-id').value.trim(),
+                    api_base_url: document.getElementById('setting-api-url').value.trim()
+                })
+            });
+            showToast('API配置已保存');
+        } catch (e) { alert('保存失败: ' + e.message); }
+    }
+
+    // ===== Utils =====
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function safeJsonParse(str, fallback) {
+        try { return JSON.parse(str); } catch { return fallback; }
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('settings-toast');
+        toast.textContent = msg;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 2000);
+    }
+
+    // ===== Init =====
+    init();
+</script>
 </body>
 </html>

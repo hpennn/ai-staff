@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from typing import Optional
 from database import get_db
-from models import StaffCreate, StaffUpdate, StaffResponse, ConversationResponse, ConversationDetailResponse, SettingsUpdate, SettingsResponse
+from models import StaffCreate, StaffUpdate
 from routers.auth import get_current_admin
 import json
 import random
@@ -15,7 +17,8 @@ AVATAR_COLORS = [
 
 
 @router.get("/staff")
-async def get_staff_list(admin: dict = Depends(get_current_admin)):
+async def get_staff_list():
+    """Public endpoint - no auth required."""
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM staff ORDER BY created_at DESC")
@@ -94,6 +97,8 @@ async def update_staff(staff_id: int, staff: StaffUpdate, admin: dict = Depends(
         updates["auto_reply_rules"] = staff.auto_reply_rules
     if staff.transfer_message is not None:
         updates["transfer_message"] = staff.transfer_message
+    if staff.shop_id is not None:
+        updates["shop_id"] = staff.shop_id
 
     if updates:
         set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
@@ -126,7 +131,8 @@ async def delete_staff(staff_id: int, admin: dict = Depends(get_current_admin)):
 
 
 @router.get("/staff/{staff_id}/stats")
-async def get_staff_stats(staff_id: int, admin: dict = Depends(get_current_admin)):
+async def get_staff_stats(staff_id: int):
+    """Public endpoint - no auth required."""
     conn = get_db()
     cursor = conn.cursor()
 
@@ -176,7 +182,8 @@ async def get_staff_stats(staff_id: int, admin: dict = Depends(get_current_admin
 
 
 @router.get("/stats/overview")
-async def get_stats_overview(admin: dict = Depends(get_current_admin)):
+async def get_stats_overview():
+    """Public endpoint - no auth required."""
     conn = get_db()
     cursor = conn.cursor()
 
@@ -245,7 +252,8 @@ async def get_stats_overview(admin: dict = Depends(get_current_admin)):
 
 
 @router.get("/conversations")
-async def get_conversations(admin: dict = Depends(get_current_admin)):
+async def get_conversations():
+    """Public endpoint - no auth required."""
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
@@ -268,7 +276,8 @@ async def get_conversations(admin: dict = Depends(get_current_admin)):
 
 
 @router.get("/staff/{staff_id}/conversations")
-async def get_staff_conversations(staff_id: int, admin: dict = Depends(get_current_admin)):
+async def get_staff_conversations(staff_id: int):
+    """Public endpoint - no auth required."""
     conn = get_db()
     cursor = conn.cursor()
 
@@ -299,7 +308,8 @@ async def get_staff_conversations(staff_id: int, admin: dict = Depends(get_curre
 
 
 @router.get("/conversations/{conv_id}")
-async def get_conversation_detail(conv_id: int, admin: dict = Depends(get_current_admin)):
+async def get_conversation_detail(conv_id: int):
+    """Public endpoint - no auth required."""
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM conversation WHERE id = ?", (conv_id,))
@@ -340,12 +350,15 @@ async def get_settings(admin: dict = Depends(get_current_admin)):
     return {
         "api_key": settings.get("api_key", ""),
         "model_id": settings.get("model_id", ""),
-        "api_base_url": settings.get("api_base_url", "")
+        "api_base_url": settings.get("api_base_url", ""),
+        "global_welcome": settings.get("global_welcome", ""),
+        "global_transfer_keywords": settings.get("global_transfer_keywords", "[]"),
+        "global_sensitive_words": settings.get("global_sensitive_words", "[]")
     }
 
 
 @router.put("/settings")
-async def update_settings(settings: SettingsUpdate, admin: dict = Depends(get_current_admin)):
+async def update_settings(settings, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -364,7 +377,25 @@ async def update_settings(settings: SettingsUpdate, admin: dict = Depends(get_cu
             "INSERT OR REPLACE INTO settings (key, value) VALUES ('api_base_url', ?)",
             (settings.api_base_url,)
         )
+    if settings.global_welcome is not None:
+        cursor.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('global_welcome', ?)",
+            (settings.global_welcome,)
+        )
+    if settings.global_transfer_keywords is not None:
+        cursor.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('global_transfer_keywords', ?)",
+            (settings.global_transfer_keywords,)
+        )
+    if settings.global_sensitive_words is not None:
+        cursor.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('global_sensitive_words', ?)",
+            (settings.global_sensitive_words,)
+        )
 
     conn.commit()
     conn.close()
     return {"message": "设置已更新"}
+
+
+

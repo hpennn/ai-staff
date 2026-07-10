@@ -39,6 +39,7 @@ class StaffUpdate(BaseModel):
     sensitive_words: Optional[str] = None
     auto_reply_rules: Optional[str] = None
     transfer_message: Optional[str] = None
+    shop_id: Optional[int] = None
 
 
 class StaffResponse(BaseModel):
@@ -53,6 +54,7 @@ class StaffResponse(BaseModel):
     sensitive_words: Optional[str] = "[]"
     auto_reply_rules: Optional[str] = "[]"
     transfer_message: Optional[str] = "正在为您转接人工客服，请稍候..."
+    shop_id: Optional[int] = None
     created_at: str
 
 
@@ -78,6 +80,9 @@ class SettingsUpdate(BaseModel):
     api_key: Optional[str] = None
     model_id: Optional[str] = None
     api_base_url: Optional[str] = None
+    global_welcome: Optional[str] = None
+    global_transfer_keywords: Optional[str] = None
+    global_sensitive_words: Optional[str] = None
 
 
 class SettingsResponse(BaseModel):
