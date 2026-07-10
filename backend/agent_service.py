@@ -3,9 +3,9 @@ import json
 import os
 from database import get_db
 
-ARK_API_KEY = "ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9"
-MODEL_ID = "ep-20260707225043-z7nkm"
-API_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
+ARK_API_KEY = os.environ.get("ARK_API_KEY", "ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9")
+MODEL_ID = os.environ.get("MODEL_ID", "ep-20260707225043-z7nkm")
+API_BASE_URL = os.environ.get("API_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
 
 
 def get_settings():

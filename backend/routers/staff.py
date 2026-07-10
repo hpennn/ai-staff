@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 from database import get_db
-from models import StaffCreate, StaffUpdate
+from models import StaffCreate, StaffUpdate, SettingsUpdate
 from routers.auth import get_current_admin
 import json
 import random
@@ -182,8 +182,7 @@ async def get_staff_stats(staff_id: int):
 
 
 @router.get("/stats/overview")
-async def get_stats_overview():
-    """Public endpoint - no auth required."""
+async def get_stats_overview(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -252,8 +251,7 @@ async def get_stats_overview():
 
 
 @router.get("/conversations")
-async def get_conversations():
-    """Public endpoint - no auth required."""
+async def get_conversations(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
@@ -276,8 +274,7 @@ async def get_conversations():
 
 
 @router.get("/staff/{staff_id}/conversations")
-async def get_staff_conversations(staff_id: int):
-    """Public endpoint - no auth required."""
+async def get_staff_conversations(staff_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -308,8 +305,7 @@ async def get_staff_conversations(staff_id: int):
 
 
 @router.get("/conversations/{conv_id}")
-async def get_conversation_detail(conv_id: int):
-    """Public endpoint - no auth required."""
+async def get_conversation_detail(conv_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM conversation WHERE id = ?", (conv_id,))
@@ -358,7 +354,7 @@ async def get_settings(admin: dict = Depends(get_current_admin)):
 
 
 @router.put("/settings")
-async def update_settings(settings, admin: dict = Depends(get_current_admin)):
+async def update_settings(settings: SettingsUpdate, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
