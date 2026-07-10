@@ -25,6 +25,20 @@ class StaffCreate(BaseModel):
     role_description: str
     knowledge_base: Optional[str] = ""
     avatar_color: Optional[str] = "#6366f1"
+    platform: Optional[str] = "通用"
+
+
+class StaffUpdate(BaseModel):
+    name: Optional[str] = None
+    role_description: Optional[str] = None
+    knowledge_base: Optional[str] = None
+    avatar_color: Optional[str] = None
+    platform: Optional[str] = None
+    welcome_message: Optional[str] = None
+    transfer_keywords: Optional[str] = None
+    sensitive_words: Optional[str] = None
+    auto_reply_rules: Optional[str] = None
+    transfer_message: Optional[str] = None
 
 
 class StaffResponse(BaseModel):
@@ -33,6 +47,12 @@ class StaffResponse(BaseModel):
     role_description: str
     knowledge_base: str
     avatar_color: str
+    platform: Optional[str] = "通用"
+    welcome_message: Optional[str] = ""
+    transfer_keywords: Optional[str] = "[]"
+    sensitive_words: Optional[str] = "[]"
+    auto_reply_rules: Optional[str] = "[]"
+    transfer_message: Optional[str] = "正在为您转接人工客服，请稍候..."
     created_at: str
 
 

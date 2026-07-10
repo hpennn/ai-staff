@@ -26,6 +26,11 @@ def build_system_prompt(staff):
 
 请始终以这个角色的身份和语气来回答用户的问题。保持专业、友好、耐心。"""
 
+    # Add welcome message context
+    welcome = staff.get("welcome_message", "")
+    if welcome:
+        system_prompt += f"\n\n你的开场白是：{welcome}（仅用于首次对话时）"
+
     if knowledge_base and knowledge_base != "[]":
         try:
             kb = json.loads(knowledge_base) if isinstance(knowledge_base, str) else knowledge_base
@@ -43,6 +48,109 @@ def build_system_prompt(staff):
                 system_prompt += f"\n\n以下是你的知识库，请在回答时参考这些内容：\n{kb_text}"
 
     return system_prompt
+
+
+def check_transfer_keywords(staff_id: int, message: str) -> dict:
+    """Check if message contains transfer-to-human keywords"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT transfer_keywords, transfer_message FROM staff WHERE id = ?", (staff_id,))
+    staff = cursor.fetchone()
+    conn.close()
+
+    if not staff:
+        return {"should_transfer": False, "message": ""}
+
+    keywords_str = staff["transfer_keywords"] or "[]"
+    transfer_msg = staff["transfer_message"] or "正在为您转接人工客服，请稍候..."
+
+    try:
+        keywords = json.loads(keywords_str)
+    except (json.JSONDecodeError, TypeError):
+        keywords = []
+
+    if not keywords:
+        return {"should_transfer": False, "message": ""}
+
+    message_lower = message.lower().strip()
+    for kw in keywords:
+        if kw.strip() and kw.strip().lower() in message_lower:
+            return {"should_transfer": True, "message": transfer_msg}
+
+    return {"should_transfer": False, "message": ""}
+
+
+def check_auto_reply(staff_id: int, message: str) -> dict:
+    """Check if message matches auto-reply rules"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT auto_reply_rules FROM staff WHERE id = ?", (staff_id,))
+    staff = cursor.fetchone()
+    conn.close()
+
+    if not staff:
+        return {"matched": False, "reply": ""}
+
+    rules_str = staff["auto_reply_rules"] or "[]"
+    try:
+        rules = json.loads(rules_str)
+    except (json.JSONDecodeError, TypeError):
+        rules = []
+
+    if not rules:
+        return {"matched": False, "reply": ""}
+
+    message_lower = message.lower().strip()
+
+    for rule in rules:
+        keywords = rule.get("keywords", [])
+        reply = rule.get("reply", "")
+        match_type = rule.get("match_type", "contains")
+
+        if not keywords or not reply:
+            continue
+
+        for kw in keywords:
+            kw_lower = kw.strip().lower()
+            if not kw_lower:
+                continue
+            if match_type == "exact":
+                if message_lower == kw_lower:
+                    return {"matched": True, "reply": reply}
+            else:  # contains
+                if kw_lower in message_lower:
+                    return {"matched": True, "reply": reply}
+
+    return {"matched": False, "reply": ""}
+
+
+def filter_sensitive_words(staff_id: int, text: str) -> str:
+    """Replace sensitive words with ***"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT sensitive_words FROM staff WHERE id = ?", (staff_id,))
+    staff = cursor.fetchone()
+    conn.close()
+
+    if not staff:
+        return text
+
+    words_str = staff["sensitive_words"] or "[]"
+    try:
+        words = json.loads(words_str)
+    except (json.JSONDecodeError, TypeError):
+        words = []
+
+    if not words:
+        return text
+
+    result = text
+    for word in words:
+        word = word.strip()
+        if word:
+            result = result.replace(word, "***")
+
+    return result
 
 
 async def chat_with_ai(staff_id: int, session_id: str, user_message: str, conversation_id: int = None):
@@ -75,6 +183,11 @@ async def chat_with_ai(staff_id: int, session_id: str, user_message: str, conver
         conv_id = conv["id"]
     else:
         messages = []
+        # Send welcome message on first interaction
+        welcome = staff_dict.get("welcome_message", "")
+        if welcome:
+            messages.append({"role": "assistant", "content": welcome})
+
         cursor.execute(
             "INSERT INTO conversation (staff_id, session_id, messages) VALUES (?, ?, ?)",
             (staff_id, session_id, "[]")

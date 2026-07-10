@@ -24,32 +24,35 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
         .avatar-initial { display: flex; align-items: center; justify-content: center; font-weight: 600; color: white; }
-        input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.3); }
+        input:focus, textarea:focus, select:focus { outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.3); }
+        .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 12px; margin: 2px; }
+        .tag-remove { margin-left: 4px; cursor: pointer; font-size: 14px; line-height: 1; }
+        .sub-page { position: absolute; inset: 0; z-index: 40; background: white; display: none; flex-direction: column; }
+        .sub-page.active { display: flex; }
     </style>
 </head>
 <body class="bg-slate-50 h-screen overflow-hidden">
-    <!-- App Container -->
     <div id="app" class="h-full flex flex-col max-w-lg mx-auto bg-white relative">
 
-        <!-- Page: Conversations List (Home) -->
+        <!-- ===== Page: My Staff (Home) ===== -->
         <div id="page-home" class="page active h-full">
             <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100">
-                <h1 class="text-xl font-bold text-slate-800">AI客服</h1>
+                <h1 class="text-xl font-bold text-slate-800">我的员工</h1>
                 <button onclick="showAddStaffModal()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xl hover:bg-indigo-600 transition-colors shadow-sm">+</button>
             </div>
-            <div id="conversation-list" class="flex-1 overflow-y-auto px-4 py-2">
+            <div id="staff-list" class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
                 <div id="empty-state" class="flex flex-col items-center justify-center h-full text-slate-400">
-                    <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                    <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     <p class="text-sm">还没有客服员工</p>
                     <p class="text-xs mt-1">点击右上角 + 创建第一个客服员工</p>
                 </div>
             </div>
         </div>
 
-        <!-- Page: Chat Window -->
+        <!-- ===== Page: Chat Window ===== -->
         <div id="page-chat" class="page h-full bg-slate-50">
             <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
-                <button onclick="goHome()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                <button onclick="goBackFromChat()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 </button>
                 <div id="chat-avatar" class="w-8 h-8 rounded-full avatar-initial text-sm mr-2"></div>
@@ -67,7 +70,212 @@
             </div>
         </div>
 
-        <!-- Page: Settings -->
+        <!-- ===== Page: Edit Staff ===== -->
+        <div id="page-edit-staff" class="sub-page">
+            <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
+                <button onclick="closeEditStaff()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <h2 class="font-bold text-slate-800">编辑员工配置</h2>
+                <button onclick="viewStaffConversations()" class="ml-auto text-xs text-indigo-500 font-medium">对话记录</button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-20">
+                <!-- Basic Info -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                    <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        基本信息
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">员工名称</label>
+                            <input id="edit-name" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">角色描述</label>
+                            <input id="edit-role" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">知识库内容</label>
+                            <textarea id="edit-knowledge" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="每行一个FAQ或知识条目"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">头像颜色</label>
+                            <div class="flex gap-2 flex-wrap">
+                                <button onclick="selectColor('#6366f1')" class="w-7 h-7 rounded-full" style="background:#6366f1"></button>
+                                <button onclick="selectColor('#8b5cf6')" class="w-7 h-7 rounded-full" style="background:#8b5cf6"></button>
+                                <button onclick="selectColor('#ec4899')" class="w-7 h-7 rounded-full" style="background:#ec4899"></button>
+                                <button onclick="selectColor('#f43f5e')" class="w-7 h-7 rounded-full" style="background:#f43f5e"></button>
+                                <button onclick="selectColor('#f97316')" class="w-7 h-7 rounded-full" style="background:#f97316"></button>
+                                <button onclick="selectColor('#eab308')" class="w-7 h-7 rounded-full" style="background:#eab308"></button>
+                                <button onclick="selectColor('#22c55e')" class="w-7 h-7 rounded-full" style="background:#22c55e"></button>
+                                <button onclick="selectColor('#14b8a6')" class="w-7 h-7 rounded-full" style="background:#14b8a6"></button>
+                                <button onclick="selectColor('#06b6d4')" class="w-7 h-7 rounded-full" style="background:#06b6d4"></button>
+                                <button onclick="selectColor('#3b82f6')" class="w-7 h-7 rounded-full" style="background:#3b82f6"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Platform -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                    <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                        平台接入
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">接入平台</label>
+                            <select id="edit-platform" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                                <option value="通用">通用</option>
+                                <option value="微信">微信</option>
+                                <option value="淘宝">淘宝</option>
+                                <option value="拼多多">拼多多</option>
+                                <option value="京东">京东</option>
+                                <option value="抖音">抖音</option>
+                                <option value="自定义">自定义</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">Webhook URL（可选）</label>
+                            <input id="edit-webhook-url" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://your-domain.com/api/webhook/wechat">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Service Config -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                    <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                        客服配置
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">欢迎语</label>
+                            <textarea id="edit-welcome" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="新客户进入时自动发送的欢迎语"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">转人工关键词</label>
+                            <div id="transfer-keywords-container" class="border border-slate-200 rounded-lg p-2 min-h-[40px] flex flex-wrap items-center gap-1">
+                                <input id="transfer-keyword-input" type="text" class="flex-1 min-w-[80px] border-none text-sm py-0.5 px-1 focus:shadow-none" placeholder="输入后回车添加" onkeydown="handleTagInput(event, 'transfer-keywords')">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">转人工提示语</label>
+                            <input id="edit-transfer-msg" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" value="正在为您转接人工客服，请稍候...">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">敏感词管理</label>
+                            <div id="sensitive-words-container" class="border border-slate-200 rounded-lg p-2 min-h-[40px] flex flex-wrap items-center gap-1">
+                                <input id="sensitive-word-input" type="text" class="flex-1 min-w-[80px] border-none text-sm py-0.5 px-1 focus:shadow-none" placeholder="输入后回车添加" onkeydown="handleTagInput(event, 'sensitive-words')">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auto Reply Rules -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-slate-700 text-sm flex items-center">
+                            <svg class="w-4 h-4 mr-1.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            关键词自动回复
+                        </h3>
+                        <button onclick="addAutoReplyRule()" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-medium hover:bg-indigo-100">+ 添加规则</button>
+                    </div>
+                    <div id="auto-reply-rules-list" class="space-y-2">
+                        <p id="auto-reply-empty" class="text-xs text-slate-400 text-center py-2">暂无自动回复规则</p>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                    <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1.5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        数据统计
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 rounded-lg p-3 text-center">
+                            <p id="edit-stat-total-conv" class="text-xl font-bold text-slate-800">0</p>
+                            <p class="text-xs text-slate-400 mt-1">总对话数</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-3 text-center">
+                            <p id="edit-stat-today-conv" class="text-xl font-bold text-green-600">0</p>
+                            <p class="text-xs text-slate-400 mt-1">今日对话</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-3 text-center">
+                            <p id="edit-stat-total-msg" class="text-xl font-bold text-indigo-600">0</p>
+                            <p class="text-xs text-slate-400 mt-1">总消息数</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-3 text-center">
+                            <p id="edit-stat-today-msg" class="text-xl font-bold text-amber-600">0</p>
+                            <p class="text-xs text-slate-400 mt-1">今日消息</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pb-4">
+                    <button onclick="deleteStaff()" class="flex-1 bg-red-50 text-red-500 rounded-xl py-3 font-medium text-sm border border-red-200">删除员工</button>
+                    <button onclick="saveStaffEdit()" class="flex-[2] bg-indigo-500 text-white rounded-xl py-3 font-medium text-sm hover:bg-indigo-600 transition-colors">保存配置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Page: Staff Conversations ===== -->
+        <div id="page-staff-convs" class="sub-page">
+            <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
+                <button onclick="closeStaffConversations()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <h2 id="conv-list-title" class="font-bold text-slate-800">对话记录</h2>
+            </div>
+            <div id="staff-conv-list" class="flex-1 overflow-y-auto px-4 py-3 space-y-2"></div>
+        </div>
+
+        <!-- ===== Page: View Conversation Detail ===== -->
+        <div id="page-conv-detail" class="sub-page bg-slate-50">
+            <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
+                <button onclick="closeConvDetail()" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-800 mr-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <h2 class="font-bold text-slate-800">对话详情</h2>
+            </div>
+            <div id="conv-detail-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3"></div>
+        </div>
+
+        <!-- ===== Page: Stats Overview ===== -->
+        <div id="page-stats" class="page h-full">
+            <div class="px-4 py-3 bg-white border-b border-slate-100">
+                <h1 class="text-xl font-bold text-slate-800">数据统计</h1>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
+                        <p id="stat-total-conv" class="text-2xl font-bold text-slate-800">0</p>
+                        <p class="text-xs text-slate-400 mt-1">总对话数</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
+                        <p id="stat-today-conv" class="text-2xl font-bold text-green-600">0</p>
+                        <p class="text-xs text-slate-400 mt-1">今日对话</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
+                        <p id="stat-total-msg" class="text-2xl font-bold text-indigo-600">0</p>
+                        <p class="text-xs text-slate-400 mt-1">总消息数</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
+                        <p id="stat-today-msg" class="text-2xl font-bold text-amber-600">0</p>
+                        <p class="text-xs text-slate-400 mt-1">今日消息</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                    <h3 class="font-semibold text-slate-700 mb-3 text-sm">员工对话排行</h3>
+                    <div id="staff-ranking" class="space-y-2">
+                        <p class="text-xs text-slate-400 text-center py-4">暂无数据</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Page: Settings ===== -->
         <div id="page-settings" class="page h-full">
             <div class="px-4 py-3 bg-white border-b border-slate-100">
                 <h1 class="text-xl font-bold text-slate-800">系统设置</h1>
@@ -95,35 +303,7 @@
             </div>
         </div>
 
-        <!-- Page: Profile -->
-        <div id="page-profile" class="page h-full">
-            <div class="px-4 py-3 bg-white border-b border-slate-100">
-                <h1 class="text-xl font-bold text-slate-800">我的</h1>
-            </div>
-            <div class="flex-1 overflow-y-auto">
-                <div class="flex flex-col items-center py-8">
-                    <div class="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">A</div>
-                    <h2 class="mt-4 text-lg font-bold text-slate-800">管理员</h2>
-                    <p class="text-sm text-slate-400">AI客服员工系统</p>
-                </div>
-                <div class="px-4 space-y-2">
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center">
-                        <svg class="w-5 h-5 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        <div><p class="text-sm font-medium text-slate-700">客服员工数</p><p id="profile-staff-count" class="text-xs text-slate-400">0 个</p></div>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center">
-                        <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                        <div><p class="text-sm font-medium text-slate-700">对话总数</p><p id="profile-conv-count" class="text-xs text-slate-400">0 个</p></div>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center">
-                        <svg class="w-5 h-5 text-amber-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <div><p class="text-sm font-medium text-slate-700">版本</p><p class="text-xs text-slate-400">v1.0.0</p></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add Staff Modal -->
+        <!-- ===== Add Staff Modal ===== -->
         <div id="modal-add-staff" class="hidden fixed inset-0 z-50 flex items-end justify-center">
             <div class="modal-overlay absolute inset-0" onclick="hideAddStaffModal()"></div>
             <div class="relative bg-white w-full max-w-lg rounded-t-2xl p-5 pb-8 fade-in max-h-[85vh] overflow-y-auto">
@@ -143,6 +323,18 @@
                         <input id="staff-role" type="text" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="如：专业热情的售前顾问">
                     </div>
                     <div>
+                        <label class="text-sm font-medium text-slate-600 mb-1 block">接入平台</label>
+                        <select id="staff-platform" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+                            <option value="通用">通用</option>
+                            <option value="微信">微信</option>
+                            <option value="淘宝">淘宝</option>
+                            <option value="拼多多">拼多多</option>
+                            <option value="京东">京东</option>
+                            <option value="抖音">抖音</option>
+                            <option value="自定义">自定义</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="text-sm font-medium text-slate-600 mb-1 block">知识库内容</label>
                         <textarea id="staff-knowledge" rows="5" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="每行一个FAQ或知识条目，如：&#10;Q: 你们的产品多少钱？&#10;A: 基础版99元/月，专业版299元/月"></textarea>
                     </div>
@@ -151,51 +343,95 @@
             </div>
         </div>
 
-        <!-- Bottom Tab Bar -->
+        <!-- ===== Auto Reply Rule Modal ===== -->
+        <div id="modal-auto-reply" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+            <div class="modal-overlay absolute inset-0" onclick="hideAutoReplyModal()"></div>
+            <div class="relative bg-white w-full max-w-lg rounded-t-2xl p-5 pb-8 fade-in max-h-[85vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 id="auto-reply-modal-title" class="text-lg font-bold text-slate-800">添加自动回复规则</h3>
+                    <button onclick="hideAutoReplyModal()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium text-slate-600 mb-1 block">匹配方式</label>
+                        <select id="rule-match-type" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+                            <option value="contains">包含匹配</option>
+                            <option value="exact">精确匹配</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-slate-600 mb-1 block">触发关键词</label>
+                        <div id="rule-keywords-container" class="border border-slate-200 rounded-lg p-2 min-h-[40px] flex flex-wrap items-center gap-1">
+                            <input id="rule-keyword-input" type="text" class="flex-1 min-w-[80px] border-none text-sm py-0.5 px-1 focus:shadow-none" placeholder="输入关键词后回车" onkeydown="handleTagInput(event, 'rule-keywords')">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-slate-600 mb-1 block">回复内容</label>
+                        <textarea id="rule-reply" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="当用户消息匹配关键词时，自动回复此内容"></textarea>
+                    </div>
+                    <button onclick="saveAutoReplyRule()" class="w-full bg-indigo-500 text-white rounded-xl py-3 font-medium text-sm hover:bg-indigo-600 transition-colors">保存规则</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Bottom Tab Bar ===== -->
         <div id="tab-bar" class="flex bg-white border-t border-slate-200 py-1 pb-2 flex-shrink-0">
             <button onclick="switchTab('home')" id="tab-home" class="flex-1 flex flex-col items-center py-1 text-indigo-500">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/><path d="M8 10h.01M12 10h.01M16 10h.01" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-                <span class="text-xs mt-0.5 font-medium">对话</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span class="text-xs mt-0.5 font-medium">我的员工</span>
+            </button>
+            <button onclick="switchTab('stats')" id="tab-stats" class="flex-1 flex flex-col items-center py-1 text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span class="text-xs mt-0.5">数据</span>
             </button>
             <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 flex flex-col items-center py-1 text-slate-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 <span class="text-xs mt-0.5">设置</span>
             </button>
-            <button onclick="switchTab('profile')" id="tab-profile" class="flex-1 flex flex-col items-center py-1 text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                <span class="text-xs mt-0.5">我的</span>
-            </button>
         </div>
     </div>
 
     <script>
-        // State
+        // ===== State =====
         let currentTab = 'home';
         let currentStaffId = null;
         let currentConvId = null;
         let currentSessionId = null;
         let staffList = [];
-        let conversations = [];
-
-        // API Base
+        let editColor = '#6366f1';
+        let editTransferKeywords = [];
+        let editSensitiveWords = [];
+        let editAutoReplyRules = [];
+        let editingRuleIndex = -1; // -1 = new, >=0 = editing
+        let ruleKeywords = [];
+        let chatFrom = 'home'; // track where chat was opened from
         const API_BASE = '/api';
+        const PLATFORM_COLORS = {
+            '通用': 'bg-slate-100 text-slate-600',
+            '微信': 'bg-green-100 text-green-700',
+            '淘宝': 'bg-orange-100 text-orange-700',
+            '拼多多': 'bg-red-100 text-red-700',
+            '京东': 'bg-blue-100 text-blue-700',
+            '抖音': 'bg-purple-100 text-purple-700',
+            '自定义': 'bg-indigo-100 text-indigo-700'
+        };
 
-        // Init
+        // ===== Init =====
         document.addEventListener('DOMContentLoaded', () => {
-            loadConversations();
             loadStaff();
             loadSettings();
-
-            // Register SW
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW error:', err));
             }
         });
 
-        // Tab switching
+        // ===== Tab switching =====
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.sub-page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('#tab-bar button').forEach(b => {
                 b.classList.remove('text-indigo-500');
                 b.classList.add('text-slate-400');
@@ -205,41 +441,29 @@
             tabBtn.classList.remove('text-slate-400');
             tabBtn.classList.add('text-indigo-500');
 
-            const page = document.getElementById('page-' + tab);
-            page.classList.add('active');
+            document.getElementById('page-' + tab).classList.add('active');
 
-            if (tab === 'home') loadConversations();
+            if (tab === 'home') loadStaff();
+            if (tab === 'stats') loadStatsOverview();
             if (tab === 'settings') loadSettings();
-            if (tab === 'profile') loadProfileStats();
         }
 
-        // Go home from chat
-        function goHome() {
-            document.getElementById('page-chat').classList.remove('active');
-            document.getElementById('page-home').classList.add('active');
-            document.getElementById('tab-bar').classList.remove('hidden');
-            currentStaffId = null;
-            currentConvId = null;
-            loadConversations();
-        }
-
-        // Load conversations
-        async function loadConversations() {
+        // ===== Staff List =====
+        async function loadStaff() {
             try {
-                const res = await fetch(API_BASE + '/conversations');
-                conversations = await res.json();
-                renderConversations();
+                const res = await fetch(API_BASE + '/staff');
+                staffList = await res.json();
+                renderStaffList();
             } catch (e) {
-                console.error('Load conversations error:', e);
+                console.error('Load staff error:', e);
             }
         }
 
-        // Render conversations
-        function renderConversations() {
-            const list = document.getElementById('conversation-list');
+        function renderStaffList() {
+            const list = document.getElementById('staff-list');
             const empty = document.getElementById('empty-state');
 
-            if (conversations.length === 0) {
+            if (staffList.length === 0) {
                 list.innerHTML = '';
                 list.appendChild(empty);
                 empty.classList.remove('hidden');
@@ -247,97 +471,110 @@
             }
 
             empty.classList.add('hidden');
-
-            // Get staff map
-            const staffMap = {};
-            staffList.forEach(s => staffMap[s.id] = s);
-
             let html = '';
-            conversations.forEach(conv => {
-                const staff = staffMap[conv.staff_id] || {};
-                const name = conv.staff_name || staff.name || '未知员工';
-                const color = conv.avatar_color || staff.avatar_color || '#6366f1';
-                const initial = name.charAt(0);
-                const lastMsg = conv.last_message || '暂无消息';
-                const time = conv.created_at ? new Date(conv.created_at).toLocaleString('zh-CN', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
-
+            staffList.forEach(s => {
+                const initial = s.name.charAt(0);
+                const platform = s.platform || '通用';
+                const platClass = PLATFORM_COLORS[platform] || 'bg-slate-100 text-slate-600';
                 html += `
-                <div onclick="openChat(${conv.id}, ${conv.staff_id}, '${conv.session_id}')" class="flex items-center px-3 py-3 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer mb-1">
-                    <div class="w-11 h-11 rounded-full avatar-initial flex-shrink-0 text-sm" style="background:${color}">${initial}</div>
-                    <div class="ml-3 flex-1 min-w-0">
-                        <div class="flex items-center justify-between">
-                            <span class="font-medium text-sm text-slate-800">${name}</span>
-                            <span class="text-xs text-slate-400">${time}</span>
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 fade-in">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-full avatar-initial text-lg flex-shrink-0" style="background:${s.avatar_color || '#6366f1'}">${initial}</div>
+                        <div class="ml-3 flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="font-semibold text-slate-800 text-sm">${escapeHtml(s.name)}</span>
+                                <span class="tag ${platClass} text-xs">${escapeHtml(platform)}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 truncate mt-0.5">${escapeHtml(s.role_description)}</p>
                         </div>
-                        <p class="text-xs text-slate-400 truncate mt-0.5">${lastMsg}</p>
+                    </div>
+                    <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+                        <button onclick="openEditStaff(${s.id})" class="flex-1 text-xs bg-indigo-50 text-indigo-600 py-2 rounded-lg font-medium hover:bg-indigo-100 transition-colors">编辑配置</button>
+                        <button onclick="startChatWithStaff(${s.id})" class="flex-1 text-xs bg-green-50 text-green-600 py-2 rounded-lg font-medium hover:bg-green-100 transition-colors">发起对话</button>
                     </div>
                 </div>`;
             });
-
             list.innerHTML = html;
-            list.appendChild(empty);
         }
 
-        // Load staff list
-        async function loadStaff() {
+        // ===== Add Staff Modal =====
+        function showAddStaffModal() { document.getElementById('modal-add-staff').classList.remove('hidden'); }
+        function hideAddStaffModal() { document.getElementById('modal-add-staff').classList.add('hidden'); }
+
+        async function createStaff() {
+            const name = document.getElementById('staff-name').value.trim();
+            const role = document.getElementById('staff-role').value.trim();
+            const knowledge = document.getElementById('staff-knowledge').value.trim();
+            const platform = document.getElementById('staff-platform').value;
+
+            if (!name || !role) { alert('请填写员工名称和角色描述'); return; }
+
             try {
-                const res = await fetch(API_BASE + '/staff');
-                staffList = await res.json();
+                await fetch(API_BASE + '/staff', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, role_description: role, knowledge_base: knowledge, platform })
+                });
+                hideAddStaffModal();
+                document.getElementById('staff-name').value = '';
+                document.getElementById('staff-role').value = '';
+                document.getElementById('staff-knowledge').value = '';
+                document.getElementById('staff-platform').value = '通用';
+                await loadStaff();
             } catch (e) {
-                console.error('Load staff error:', e);
+                alert('创建失败: ' + e.message);
             }
         }
 
-        // Open chat
-        async function openChat(convId, staffId, sessionId) {
-            currentConvId = convId;
-            currentStaffId = staffId;
-            currentSessionId = sessionId;
-
-            // Find staff
+        // ===== Chat =====
+        function startChatWithStaff(staffId) {
             const staff = staffList.find(s => s.id === staffId);
-            if (staff) {
-                document.getElementById('chat-staff-name').textContent = staff.name;
-                document.getElementById('chat-staff-role').textContent = staff.role_description;
-                const avatar = document.getElementById('chat-avatar');
-                avatar.style.background = staff.avatar_color || '#6366f1';
-                avatar.textContent = staff.name.charAt(0);
-            }
+            if (!staff) return;
+            currentStaffId = staffId;
+            currentSessionId = 'session-' + Date.now();
+            currentConvId = null;
+            chatFrom = 'home';
 
-            // Load messages
-            try {
-                const res = await fetch(API_BASE + '/conversations/' + convId);
-                const conv = await res.json();
-                renderMessages(conv.messages || []);
-            } catch (e) {
-                console.error('Load messages error:', e);
-                renderMessages([]);
+            document.getElementById('chat-staff-name').textContent = staff.name;
+            document.getElementById('chat-staff-role').textContent = staff.role_description;
+            const avatar = document.getElementById('chat-avatar');
+            avatar.style.background = staff.avatar_color || '#6366f1';
+            avatar.textContent = staff.name.charAt(0);
+
+            document.getElementById('chat-messages').innerHTML = '';
+
+            // Send welcome message if exists
+            if (staff.welcome_message) {
+                appendMessage('assistant', staff.welcome_message);
             }
 
             document.getElementById('page-home').classList.remove('active');
             document.getElementById('page-chat').classList.add('active');
             document.getElementById('tab-bar').classList.add('hidden');
-
-            // Scroll to bottom
-            setTimeout(scrollToBottom, 100);
         }
 
-        // Render messages
-        function renderMessages(messages) {
+        function goBackFromChat() {
+            document.getElementById('page-chat').classList.remove('active');
+            if (chatFrom === 'edit') {
+                document.getElementById('page-edit-staff').classList.add('active');
+            } else {
+                document.getElementById('page-home').classList.add('active');
+                document.getElementById('tab-bar').classList.remove('hidden');
+            }
+            currentStaffId = null;
+            currentConvId = null;
+        }
+
+        function appendMessage(role, content) {
             const container = document.getElementById('chat-messages');
-            let html = '';
-            messages.forEach(msg => {
-                if (msg.role === 'user') {
-                    html += `<div class="flex justify-end fade-in"><div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">${escapeHtml(msg.content)}</div></div>`;
-                } else {
-                    html += `<div class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">${escapeHtml(msg.content)}</div></div>`;
-                }
-            });
-            container.innerHTML = html;
-            scrollToBottom();
+            if (role === 'user') {
+                container.innerHTML += `<div class="flex justify-end fade-in"><div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">${escapeHtml(content)}</div></div>`;
+            } else {
+                container.innerHTML += `<div class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">${escapeHtml(content)}</div></div>`;
+            }
+            container.scrollTop = container.scrollHeight;
         }
 
-        // Send message
         async function sendMessage() {
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
@@ -345,118 +582,358 @@
 
             input.value = '';
             input.style.height = 'auto';
+            appendMessage('user', message);
 
-            // Add user message to UI
-            const container = document.getElementById('chat-messages');
-            container.innerHTML += `<div class="flex justify-end fade-in"><div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">${escapeHtml(message)}</div></div>`;
-            scrollToBottom();
-
-            // Show typing indicator
+            // Typing indicator
             const typingId = 'typing-' + Date.now();
+            const container = document.getElementById('chat-messages');
             container.innerHTML += `<div id="${typingId}" class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-400 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">思考中...</div></div>`;
-            scrollToBottom();
+            container.scrollTop = container.scrollHeight;
 
             try {
                 const res = await fetch(API_BASE + '/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        staff_id: currentStaffId,
-                        session_id: currentSessionId,
-                        message: message
-                    })
+                    body: JSON.stringify({ staff_id: currentStaffId, session_id: currentSessionId, message })
                 });
                 const data = await res.json();
-
-                // Remove typing indicator
                 document.getElementById(typingId)?.remove();
-
-                // Add AI reply
-                container.innerHTML += `<div class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">${escapeHtml(data.reply)}</div></div>`;
-                scrollToBottom();
+                appendMessage('assistant', data.reply);
             } catch (e) {
                 document.getElementById(typingId)?.remove();
-                container.innerHTML += `<div class="flex justify-start fade-in"><div class="msg-bubble bg-red-50 text-red-500 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-red-100">发送失败，请重试</div></div>`;
-                scrollToBottom();
+                appendMessage('assistant', '发送失败，请重试');
             }
         }
 
-        // Chat input keydown
         function handleChatKeydown(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-            // Auto resize textarea
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
             const el = e.target;
-            setTimeout(() => {
-                el.style.height = 'auto';
-                el.style.height = Math.min(el.scrollHeight, 96) + 'px';
-            }, 0);
+            setTimeout(() => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 96) + 'px'; }, 0);
         }
 
-        // Scroll to bottom
-        function scrollToBottom() {
-            const container = document.getElementById('chat-messages');
-            container.scrollTop = container.scrollHeight;
+        // ===== Edit Staff =====
+        async function openEditStaff(staffId) {
+            try {
+                const res = await fetch(API_BASE + '/staff/' + staffId + '/stats');
+                const stats = await res.json();
+                document.getElementById('edit-stat-total-conv').textContent = stats.total_conversations;
+                document.getElementById('edit-stat-today-conv').textContent = stats.today_conversations;
+                document.getElementById('edit-stat-total-msg').textContent = stats.total_messages;
+                document.getElementById('edit-stat-today-msg').textContent = stats.today_messages;
+            } catch (e) { console.error(e); }
+
+            const staff = staffList.find(s => s.id === staffId);
+            if (!staff) return;
+
+            currentStaffId = staffId;
+            editColor = staff.avatar_color || '#6366f1';
+
+            document.getElementById('edit-name').value = staff.name;
+            document.getElementById('edit-role').value = staff.role_description;
+            // Parse knowledge base
+            let kb = staff.knowledge_base || '[]';
+            try {
+                const kbArr = JSON.parse(kb);
+                document.getElementById('edit-knowledge').value = Array.isArray(kbArr) ? kbArr.join('\n') : kb;
+            } catch { document.getElementById('edit-knowledge').value = kb; }
+
+            document.getElementById('edit-platform').value = staff.platform || '通用';
+            document.getElementById('edit-webhook-url').value = '';
+            document.getElementById('edit-welcome').value = staff.welcome_message || '';
+            document.getElementById('edit-transfer-msg').value = staff.transfer_message || '正在为您转接人工客服，请稍候...';
+
+            // Tags
+            editTransferKeywords = safeJsonParse(staff.transfer_keywords, []);
+            editSensitiveWords = safeJsonParse(staff.sensitive_words, []);
+            editAutoReplyRules = safeJsonParse(staff.auto_reply_rules, []);
+
+            renderTags('transfer-keywords', editTransferKeywords);
+            renderTags('sensitive-words', editSensitiveWords);
+            renderAutoReplyRules();
+
+            document.getElementById('page-home').classList.remove('active');
+            document.getElementById('page-edit-staff').classList.add('active');
+            document.getElementById('tab-bar').classList.add('hidden');
         }
 
-        // Show/hide add staff modal
-        function showAddStaffModal() {
-            document.getElementById('modal-add-staff').classList.remove('hidden');
-        }
-        function hideAddStaffModal() {
-            document.getElementById('modal-add-staff').classList.add('hidden');
+        function closeEditStaff() {
+            document.getElementById('page-edit-staff').classList.remove('active');
+            document.getElementById('page-home').classList.add('active');
+            document.getElementById('tab-bar').classList.remove('hidden');
+            currentStaffId = null;
+            loadStaff();
         }
 
-        // Create staff
-        async function createStaff() {
-            const name = document.getElementById('staff-name').value.trim();
-            const role = document.getElementById('staff-role').value.trim();
-            const knowledge = document.getElementById('staff-knowledge').value.trim();
+        function selectColor(color) { editColor = color; }
 
-            if (!name || !role) {
-                alert('请填写员工名称和角色描述');
-                return;
-            }
+        async function saveStaffEdit() {
+            const name = document.getElementById('edit-name').value.trim();
+            const role = document.getElementById('edit-role').value.trim();
+            if (!name || !role) { alert('请填写员工名称和角色描述'); return; }
+
+            const knowledge = document.getElementById('edit-knowledge').value.trim();
+            const platform = document.getElementById('edit-platform').value;
+            const welcome = document.getElementById('edit-welcome').value;
+            const transferMsg = document.getElementById('edit-transfer-msg').value;
 
             try {
-                const res = await fetch(API_BASE + '/staff', {
-                    method: 'POST',
+                await fetch(API_BASE + '/staff/' + currentStaffId, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name: name,
+                        name,
                         role_description: role,
-                        knowledge_base: knowledge
+                        knowledge_base: knowledge,
+                        avatar_color: editColor,
+                        platform,
+                        welcome_message: welcome,
+                        transfer_keywords: JSON.stringify(editTransferKeywords),
+                        sensitive_words: JSON.stringify(editSensitiveWords),
+                        auto_reply_rules: JSON.stringify(editAutoReplyRules),
+                        transfer_message: transferMsg
                     })
                 });
-                const data = await res.json();
-
-                // Create initial conversation
-                const sessionId = 'session-' + Date.now();
-                const convRes = await fetch(API_BASE + '/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        staff_id: data.id,
-                        session_id: sessionId,
-                        message: '你好！'
-                    })
-                });
-
-                hideAddStaffModal();
-                document.getElementById('staff-name').value = '';
-                document.getElementById('staff-role').value = '';
-                document.getElementById('staff-knowledge').value = '';
-
+                // Show toast
+                showToast('配置已保存');
                 await loadStaff();
-                await loadConversations();
             } catch (e) {
-                alert('创建失败: ' + e.message);
+                alert('保存失败: ' + e.message);
             }
         }
 
-        // Settings
+        async function deleteStaff() {
+            if (!confirm('确定删除该员工？所有对话记录也会被删除。')) return;
+            try {
+                await fetch(API_BASE + '/staff/' + currentStaffId, { method: 'DELETE' });
+                closeEditStaff();
+                showToast('员工已删除');
+            } catch (e) {
+                alert('删除失败: ' + e.message);
+            }
+        }
+
+        // ===== Tag Input =====
+        function handleTagInput(event, type) {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            const input = event.target;
+            const val = input.value.trim();
+            if (!val) return;
+
+            if (type === 'transfer-keywords') {
+                if (!editTransferKeywords.includes(val)) editTransferKeywords.push(val);
+                renderTags('transfer-keywords', editTransferKeywords);
+            } else if (type === 'sensitive-words') {
+                if (!editSensitiveWords.includes(val)) editSensitiveWords.push(val);
+                renderTags('sensitive-words', editSensitiveWords);
+            } else if (type === 'rule-keywords') {
+                if (!ruleKeywords.includes(val)) ruleKeywords.push(val);
+                renderTags('rule-keywords', ruleKeywords);
+            }
+            input.value = '';
+        }
+
+        function renderTags(type, arr) {
+            const container = document.getElementById(type + '-container');
+            const input = container.querySelector('input');
+            // Remove old tags
+            container.querySelectorAll('.tag').forEach(t => t.remove());
+            arr.forEach((item, idx) => {
+                const tag = document.createElement('span');
+                tag.className = 'tag bg-indigo-100 text-indigo-700';
+                tag.innerHTML = `${escapeHtml(item)}<span class="tag-remove" onclick="removeTag('${type}', ${idx})">&times;</span>`;
+                container.insertBefore(tag, input);
+            });
+        }
+
+        function removeTag(type, idx) {
+            if (type === 'transfer-keywords') { editTransferKeywords.splice(idx, 1); renderTags('transfer-keywords', editTransferKeywords); }
+            else if (type === 'sensitive-words') { editSensitiveWords.splice(idx, 1); renderTags('sensitive-words', editSensitiveWords); }
+            else if (type === 'rule-keywords') { ruleKeywords.splice(idx, 1); renderTags('rule-keywords', ruleKeywords); }
+        }
+
+        // ===== Auto Reply Rules =====
+        function renderAutoReplyRules() {
+            const list = document.getElementById('auto-reply-rules-list');
+            const empty = document.getElementById('auto-reply-empty');
+            if (editAutoReplyRules.length === 0) {
+                list.innerHTML = '';
+                list.appendChild(empty);
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            let html = '';
+            editAutoReplyRules.forEach((rule, idx) => {
+                const matchLabel = rule.match_type === 'exact' ? '精确' : '包含';
+                html += `
+                <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1 mb-1">
+                                <span class="tag bg-purple-100 text-purple-700 text-xs">${matchLabel}</span>
+                                <span class="text-xs text-slate-500">${(rule.keywords || []).map(k => escapeHtml(k)).join(', ')}</span>
+                            </div>
+                            <p class="text-xs text-slate-600 truncate">回复: ${escapeHtml(rule.reply || '')}</p>
+                        </div>
+                        <div class="flex gap-1 ml-2">
+                            <button onclick="editAutoReplyRule(${idx})" class="text-xs text-indigo-500 p-1">编辑</button>
+                            <button onclick="removeAutoReplyRule(${idx})" class="text-xs text-red-400 p-1">删除</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            list.innerHTML = html;
+        }
+
+        function addAutoReplyRule() {
+            editingRuleIndex = -1;
+            ruleKeywords = [];
+            document.getElementById('rule-match-type').value = 'contains';
+            document.getElementById('rule-reply').value = '';
+            renderTags('rule-keywords', ruleKeywords);
+            document.getElementById('auto-reply-modal-title').textContent = '添加自动回复规则';
+            document.getElementById('modal-auto-reply').classList.remove('hidden');
+        }
+
+        function editAutoReplyRule(idx) {
+            editingRuleIndex = idx;
+            const rule = editAutoReplyRules[idx];
+            ruleKeywords = [...(rule.keywords || [])];
+            document.getElementById('rule-match-type').value = rule.match_type || 'contains';
+            document.getElementById('rule-reply').value = rule.reply || '';
+            renderTags('rule-keywords', ruleKeywords);
+            document.getElementById('auto-reply-modal-title').textContent = '编辑自动回复规则';
+            document.getElementById('modal-auto-reply').classList.remove('hidden');
+        }
+
+        function hideAutoReplyModal() { document.getElementById('modal-auto-reply').classList.add('hidden'); }
+
+        function saveAutoReplyRule() {
+            const reply = document.getElementById('rule-reply').value.trim();
+            const matchType = document.getElementById('rule-match-type').value;
+            if (ruleKeywords.length === 0 || !reply) { alert('请添加关键词和回复内容'); return; }
+
+            const rule = { keywords: [...ruleKeywords], reply, match_type: matchType };
+            if (editingRuleIndex >= 0) {
+                editAutoReplyRules[editingRuleIndex] = rule;
+            } else {
+                editAutoReplyRules.push(rule);
+            }
+            renderAutoReplyRules();
+            hideAutoReplyModal();
+        }
+
+        function removeAutoReplyRule(idx) {
+            editAutoReplyRules.splice(idx, 1);
+            renderAutoReplyRules();
+        }
+
+        // ===== Staff Conversations =====
+        async function viewStaffConversations() {
+            try {
+                const res = await fetch(API_BASE + '/staff/' + currentStaffId + '/conversations');
+                const convs = await res.json();
+                const staff = staffList.find(s => s.id === currentStaffId);
+                document.getElementById('conv-list-title').textContent = (staff ? staff.name : '') + ' - 对话记录';
+                renderStaffConvList(convs);
+            } catch (e) { console.error(e); }
+
+            document.getElementById('page-edit-staff').classList.remove('active');
+            document.getElementById('page-staff-convs').classList.add('active');
+        }
+
+        function renderStaffConvList(convs) {
+            const list = document.getElementById('staff-conv-list');
+            if (convs.length === 0) {
+                list.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">暂无对话记录</p>';
+                return;
+            }
+            let html = '';
+            convs.forEach(conv => {
+                const msgs = conv.messages || '[]';
+                let parsed = [];
+                try { parsed = JSON.parse(msgs); } catch {}
+                const lastMsg = parsed.length > 0 ? parsed[parsed.length - 1].content.substring(0, 40) : '暂无消息';
+                const time = conv.created_at ? new Date(conv.created_at).toLocaleString('zh-CN') : '';
+                html += `
+                <div onclick="viewConvDetail(${conv.id})" class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-slate-700">${conv.session_id}</span>
+                        <span class="text-xs text-slate-400">${time}</span>
+                    </div>
+                    <p class="text-xs text-slate-400 truncate mt-1">${escapeHtml(lastMsg)}</p>
+                </div>`;
+            });
+            list.innerHTML = html;
+        }
+
+        function closeStaffConversations() {
+            document.getElementById('page-staff-convs').classList.remove('active');
+            document.getElementById('page-edit-staff').classList.add('active');
+        }
+
+        async function viewConvDetail(convId) {
+            try {
+                const res = await fetch(API_BASE + '/conversations/' + convId);
+                const conv = await res.json();
+                const msgs = conv.messages || [];
+                const container = document.getElementById('conv-detail-messages');
+                let html = '';
+                msgs.forEach(msg => {
+                    if (msg.role === 'user') {
+                        html += `<div class="flex justify-end fade-in"><div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">${escapeHtml(msg.content)}</div></div>`;
+                    } else {
+                        html += `<div class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">${escapeHtml(msg.content)}</div></div>`;
+                    }
+                });
+                if (!html) html = '<p class="text-sm text-slate-400 text-center py-8">该对话暂无消息</p>';
+                container.innerHTML = html;
+            } catch (e) { console.error(e); }
+
+            document.getElementById('page-staff-convs').classList.remove('active');
+            document.getElementById('page-conv-detail').classList.add('active');
+        }
+
+        function closeConvDetail() {
+            document.getElementById('page-conv-detail').classList.remove('active');
+            document.getElementById('page-staff-convs').classList.add('active');
+        }
+
+        // ===== Stats Overview =====
+        async function loadStatsOverview() {
+            try {
+                const res = await fetch(API_BASE + '/stats/overview');
+                const data = await res.json();
+                document.getElementById('stat-total-conv').textContent = data.total_conversations;
+                document.getElementById('stat-today-conv').textContent = data.today_conversations;
+                document.getElementById('stat-total-msg').textContent = data.total_messages;
+                document.getElementById('stat-today-msg').textContent = data.today_messages;
+
+                const ranking = document.getElementById('staff-ranking');
+                if (data.staff_ranking && data.staff_ranking.length > 0) {
+                    let html = '';
+                    data.staff_ranking.forEach((s, i) => {
+                        const medals = ['🥇', '🥈', '🥉'];
+                        const medal = medals[i] || (i + 1);
+                        html += `
+                        <div class="flex items-center py-2 border-b border-slate-50 last:border-0">
+                            <span class="w-8 text-center text-sm">${medal}</span>
+                            <div class="w-8 h-8 rounded-full avatar-initial text-xs mx-2" style="background:${s.avatar_color || '#6366f1'}">${s.name.charAt(0)}</div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-slate-700">${escapeHtml(s.name)}</p>
+                                <p class="text-xs text-slate-400">${s.conversations} 对话 · ${s.messages} 消息</p>
+                            </div>
+                        </div>`;
+                    });
+                    ranking.innerHTML = html;
+                } else {
+                    ranking.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">暂无数据</p>';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // ===== Settings =====
         async function loadSettings() {
             try {
                 const res = await fetch(API_BASE + '/settings');
@@ -464,9 +941,7 @@
                 document.getElementById('setting-api-key').value = data.api_key || '';
                 document.getElementById('setting-model-id').value = data.model_id || '';
                 document.getElementById('setting-api-url').value = data.api_base_url || '';
-            } catch (e) {
-                console.error('Load settings error:', e);
-            }
+            } catch (e) { console.error('Load settings error:', e); }
         }
 
         async function saveSettings() {
@@ -480,35 +955,26 @@
                         api_base_url: document.getElementById('setting-api-url').value.trim()
                     })
                 });
-                const toast = document.getElementById('settings-toast');
-                toast.classList.remove('hidden');
-                setTimeout(() => toast.classList.add('hidden'), 2000);
-            } catch (e) {
-                alert('保存失败: ' + e.message);
-            }
+                showToast('设置已保存');
+            } catch (e) { alert('保存失败: ' + e.message); }
         }
 
-        // Profile stats
-        async function loadProfileStats() {
-            try {
-                const [staffRes, convRes] = await Promise.all([
-                    fetch(API_BASE + '/staff'),
-                    fetch(API_BASE + '/conversations')
-                ]);
-                const staff = await staffRes.json();
-                const convs = await convRes.json();
-                document.getElementById('profile-staff-count').textContent = staff.length + ' 个';
-                document.getElementById('profile-conv-count').textContent = convs.length + ' 个';
-            } catch (e) {
-                console.error('Load profile stats error:', e);
-            }
-        }
-
-        // Escape HTML
+        // ===== Utils =====
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function safeJsonParse(str, fallback) {
+            try { return JSON.parse(str); } catch { return fallback; }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('settings-toast');
+            toast.textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2000);
         }
     </script>
 </body>

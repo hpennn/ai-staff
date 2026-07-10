@@ -11,6 +11,12 @@ def get_db():
     return conn
 
 
+def _column_exists(cursor, table, column):
+    cursor.execute(f"PRAGMA table_info({table})")
+    columns = [row["name"] for row in cursor.fetchall()]
+    return column in columns
+
+
 def init_db():
     conn = get_db()
     cursor = conn.cursor()
@@ -55,15 +61,24 @@ def init_db():
     """)
 
     # Insert default settings if not exist
-    cursor.execute("""
-        INSERT OR IGNORE INTO settings (key, value) VALUES ('api_key', 'ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9')
-    """)
-    cursor.execute("""
-        INSERT OR IGNORE INTO settings (key, value) VALUES ('model_id', 'ep-20260707225043-z7nkm')
-    """)
-    cursor.execute("""
-        INSERT OR IGNORE INTO settings (key, value) VALUES ('api_base_url', 'https://ark.cn-beijing.volces.com/api/v3')
-    """)
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('api_key', 'ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('model_id', 'ep-20260707225043-z7nkm')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('api_base_url', 'https://ark.cn-beijing.volces.com/api/v3')")
+
+    conn.commit()
+
+    # Extend staff table with new columns
+    new_columns = {
+        "platform": "TEXT DEFAULT '通用'",
+        "welcome_message": "TEXT DEFAULT ''",
+        "transfer_keywords": "TEXT DEFAULT '[]'",
+        "sensitive_words": "TEXT DEFAULT '[]'",
+        "auto_reply_rules": "TEXT DEFAULT '[]'",
+        "transfer_message": "TEXT DEFAULT '正在为您转接人工客服，请稍候...'",
+    }
+    for col, col_type in new_columns.items():
+        if not _column_exists(cursor, "staff", col):
+            cursor.execute(f"ALTER TABLE staff ADD COLUMN {col} {col_type}")
 
     conn.commit()
     conn.close()
