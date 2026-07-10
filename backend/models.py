@@ -96,3 +96,24 @@ class WebhookPayload(BaseModel):
     staff_id: int
     message: str
     session_id: Optional[str] = "webhook-default"
+
+
+class SubscriptionCreate(BaseModel):
+    plan: str  # free, basic, pro, enterprise
+
+
+class SubscriptionResponse(BaseModel):
+    id: Optional[int] = None
+    plan: str
+    plan_name: Optional[str] = ""
+    conversations_used: Optional[int] = 0
+    conversations_limit: Optional[int] = 100
+    staff_limit: Optional[int] = 1
+    expires_at: Optional[str] = None
+    status: Optional[str] = "active"
+
+
+class PaymentCallback(BaseModel):
+    out_trade_no: str
+    result_code: Optional[str] = "SUCCESS"
+    total_fee: Optional[int] = None

@@ -60,7 +60,6 @@ def init_db():
         )
     """)
 
-    # Admin authentication tables
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS admin (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,7 +78,6 @@ def init_db():
         )
     """)
 
-    # Shops table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS shops (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,7 +90,6 @@ def init_db():
         )
     """)
 
-    # Platform config table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS platform_config (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,7 +101,35 @@ def init_db():
         )
     """)
 
-    # Insert default settings if not exist
+    # Subscription & payment tables
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plan TEXT NOT NULL DEFAULT 'free',
+            amount INTEGER DEFAULT 0,
+            starts_at TEXT,
+            expires_at TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id TEXT UNIQUE NOT NULL,
+            subscription_id INTEGER,
+            plan TEXT NOT NULL,
+            amount INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            qr_code_path TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            paid_at TIMESTAMP,
+            FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
+        )
+    """)
+
+    # Default settings
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('api_key', 'ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9')")
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('model_id', 'ep-20260707225043-z7nkm')")
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('api_base_url', 'https://ark.cn-beijing.volces.com/api/v3')")
