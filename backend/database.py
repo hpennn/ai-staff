@@ -63,8 +63,9 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS admin (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
+            username TEXT UNIQUE,
+            password_hash TEXT,
+            phone TEXT UNIQUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -149,6 +150,18 @@ def init_db():
     for col, col_type in new_columns.items():
         if not _column_exists(cursor, "staff", col):
             cursor.execute(f"ALTER TABLE staff ADD COLUMN {col} {col_type}")
+
+
+    # Phone verification codes
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS phone_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            phone TEXT NOT NULL,
+            code TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
 
     conn.commit()
     conn.close()
