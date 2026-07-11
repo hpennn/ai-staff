@@ -38,9 +38,13 @@ async def send_message(request: ChatRequest):
                 conv_id = conv["id"]
             else:
                 messages = []
+                # Get admin_id from staff record
+                cursor.execute("SELECT admin_id FROM staff WHERE id = ?", (request.staff_id,))
+                staff_row = cursor.fetchone()
+                chat_admin_id = staff_row["admin_id"] if staff_row else 0
                 cursor.execute(
-                    "INSERT INTO conversation (staff_id, session_id, messages) VALUES (?, ?, ?)",
-                    (request.staff_id, request.session_id, "[]")
+                    "INSERT INTO conversation (admin_id, staff_id, session_id, messages) VALUES (?, ?, ?, ?)",
+                    (chat_admin_id, request.staff_id, request.session_id, "[]")
                 )
                 conn.commit()
                 conv_id = cursor.lastrowid

@@ -8,10 +8,10 @@ MODEL_ID = os.environ.get("MODEL_ID", "ep-20260707225043-z7nkm")
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
 
 
-def get_settings():
+def get_settings(admin_id: int = 0):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT key, value FROM settings")
+    cursor.execute("SELECT key, value FROM settings WHERE admin_id = ?", (admin_id,))
     settings = {row["key"]: row["value"] for row in cursor.fetchall()}
     conn.close()
     return settings
@@ -188,9 +188,10 @@ async def chat_with_ai(staff_id: int, session_id: str, user_message: str, conver
         if welcome:
             messages.append({"role": "assistant", "content": welcome})
 
+        admin_id = staff_dict.get("admin_id", 0)
         cursor.execute(
-            "INSERT INTO conversation (staff_id, session_id, messages) VALUES (?, ?, ?)",
-            (staff_id, session_id, "[]")
+            "INSERT INTO conversation (admin_id, staff_id, session_id, messages) VALUES (?, ?, ?, ?)",
+            (admin_id, staff_id, session_id, "[]")
         )
         conn.commit()
         conv_id = cursor.lastrowid
@@ -198,8 +199,9 @@ async def chat_with_ai(staff_id: int, session_id: str, user_message: str, conver
     # Add user message
     messages.append({"role": "user", "content": user_message})
 
-    # Get settings
-    settings = get_settings()
+    # Get settings (use the staff owner's admin_id)
+    admin_id = staff_dict.get("admin_id", 0)
+    settings = get_settings(admin_id)
     api_key = settings.get("api_key", ARK_API_KEY)
     model_id = settings.get("model_id", MODEL_ID)
     api_base_url = settings.get("api_base_url", API_BASE_URL)

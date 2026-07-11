@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from typing import Optional
 from database import get_db
@@ -17,11 +17,14 @@ AVATAR_COLORS = [
 
 
 @router.get("/staff")
-async def get_staff_list():
-    """Public endpoint - no auth required."""
+async def get_staff_list(admin_id: Optional[int] = Query(None)):
+    """Public endpoint - no auth required. Supports optional admin_id filter."""
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM staff ORDER BY created_at DESC")
+    if admin_id is not None:
+        cursor.execute("SELECT * FROM staff WHERE admin_id = ? ORDER BY created_at DESC", (admin_id,))
+    else:
+        cursor.execute("SELECT * FROM staff ORDER BY created_at DESC")
     staff_list = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return staff_list
@@ -44,8 +47,8 @@ async def create_staff(staff: StaffCreate, admin: dict = Depends(get_current_adm
     platform = staff.platform or "通用"
 
     cursor.execute(
-        "INSERT INTO staff (name, role_description, knowledge_base, avatar_color, platform) VALUES (?, ?, ?, ?, ?)",
-        (staff.name, staff.role_description, kb_json, avatar_color, platform)
+        "INSERT INTO staff (admin_id, name, role_description, knowledge_base, avatar_color, platform) VALUES (?, ?, ?, ?, ?, ?)",
+        (admin["admin_id"], staff.name, staff.role_description, kb_json, avatar_color, platform)
     )
     conn.commit()
     staff_id = cursor.lastrowid
@@ -62,7 +65,7 @@ async def update_staff(staff_id: int, staff: StaffUpdate, admin: dict = Depends(
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM staff WHERE id = ?", (staff_id,))
+    cursor.execute("SELECT * FROM staff WHERE id = ? AND admin_id = ?", (staff_id, admin["admin_id"]))
     existing = cursor.fetchone()
     if not existing:
         conn.close()
@@ -117,7 +120,7 @@ async def update_staff(staff_id: int, staff: StaffUpdate, admin: dict = Depends(
 async def delete_staff(staff_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM staff WHERE id = ?", (staff_id,))
+    cursor.execute("SELECT * FROM staff WHERE id = ? AND admin_id = ?", (staff_id, admin["admin_id"]))
     staff = cursor.fetchone()
     if not staff:
         conn.close()
@@ -185,35 +188,36 @@ async def get_staff_stats(staff_id: int):
 async def get_stats_overview(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
+    aid = admin["admin_id"]
 
-    # Total conversations
-    cursor.execute("SELECT COUNT(*) as cnt FROM conversation")
+    # Total conversations (only for this admin's staff)
+    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE admin_id = ?", (aid,))
     total_conversations = cursor.fetchone()["cnt"]
 
     # Today conversations
-    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE DATE(created_at) = DATE('now', 'localtime')")
+    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE admin_id = ? AND DATE(created_at) = DATE('now', 'localtime')", (aid,))
     today_conversations = cursor.fetchone()["cnt"]
 
     # Total messages
-    cursor.execute("SELECT messages FROM conversation")
+    cursor.execute("SELECT messages FROM conversation WHERE admin_id = ?", (aid,))
     total_messages = 0
     for row in cursor.fetchall():
         msgs = json.loads(row["messages"] or "[]")
         total_messages += len(msgs)
 
     # Today messages
-    cursor.execute("SELECT messages FROM conversation WHERE DATE(created_at) = DATE('now', 'localtime')")
+    cursor.execute("SELECT messages FROM conversation WHERE admin_id = ? AND DATE(created_at) = DATE('now', 'localtime')", (aid,))
     today_messages = 0
     for row in cursor.fetchall():
         msgs = json.loads(row["messages"] or "[]")
         today_messages += len(msgs)
 
     # Staff count
-    cursor.execute("SELECT COUNT(*) as cnt FROM staff")
+    cursor.execute("SELECT COUNT(*) as cnt FROM staff WHERE admin_id = ?", (aid,))
     staff_count = cursor.fetchone()["cnt"]
 
     # Per-staff ranking (by total messages)
-    cursor.execute("SELECT id, name, avatar_color FROM staff")
+    cursor.execute("SELECT id, name, avatar_color FROM staff WHERE admin_id = ?", (aid,))
     staff_ranking = []
     for s in cursor.fetchall():
         s_dict = dict(s)
@@ -258,8 +262,9 @@ async def get_conversations(admin: dict = Depends(get_current_admin)):
         SELECT c.*, s.name as staff_name, s.avatar_color
         FROM conversation c
         LEFT JOIN staff s ON c.staff_id = s.id
+        WHERE c.admin_id = ?
         ORDER BY c.created_at DESC
-    """)
+    """, (admin["admin_id"],))
     conversations = []
     for row in cursor.fetchall():
         conv = dict(row)
@@ -278,7 +283,7 @@ async def get_staff_conversations(staff_id: int, admin: dict = Depends(get_curre
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM staff WHERE id = ?", (staff_id,))
+    cursor.execute("SELECT * FROM staff WHERE id = ? AND admin_id = ?", (staff_id, admin["admin_id"]))
     staff = cursor.fetchone()
     if not staff:
         conn.close()
@@ -308,7 +313,7 @@ async def get_staff_conversations(staff_id: int, admin: dict = Depends(get_curre
 async def get_conversation_detail(conv_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM conversation WHERE id = ?", (conv_id,))
+    cursor.execute("SELECT * FROM conversation WHERE id = ? AND admin_id = ?", (conv_id, admin["admin_id"]))
     conv = cursor.fetchone()
     if not conv:
         conn.close()
@@ -324,7 +329,7 @@ async def get_conversation_detail(conv_id: int, admin: dict = Depends(get_curren
 async def delete_conversation(conv_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM conversation WHERE id = ?", (conv_id,))
+    cursor.execute("SELECT * FROM conversation WHERE id = ? AND admin_id = ?", (conv_id, admin["admin_id"]))
     conv = cursor.fetchone()
     if not conv:
         conn.close()
@@ -340,7 +345,7 @@ async def delete_conversation(conv_id: int, admin: dict = Depends(get_current_ad
 async def get_settings(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT key, value FROM settings")
+    cursor.execute("SELECT key, value FROM settings WHERE admin_id = ?", (admin["admin_id"],))
     settings = {row["key"]: row["value"] for row in cursor.fetchall()}
     conn.close()
     return {
@@ -357,41 +362,39 @@ async def get_settings(admin: dict = Depends(get_current_admin)):
 async def update_settings(settings: SettingsUpdate, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
+    aid = admin["admin_id"]
 
     if settings.api_key is not None:
         cursor.execute(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES ('api_key', ?)",
-            (settings.api_key,)
+            "INSERT OR REPLACE INTO settings (admin_id, key, value) VALUES (?, 'api_key', ?)",
+            (aid, settings.api_key)
         )
     if settings.model_id is not None:
         cursor.execute(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES ('model_id', ?)",
-            (settings.model_id,)
+            "INSERT OR REPLACE INTO settings (admin_id, key, value) VALUES (?, 'model_id', ?)",
+            (aid, settings.model_id)
         )
     if settings.api_base_url is not None:
         cursor.execute(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES ('api_base_url', ?)",
-            (settings.api_base_url,)
+            "INSERT OR REPLACE INTO settings (admin_id, key, value) VALUES (?, 'api_base_url', ?)",
+            (aid, settings.api_base_url)
         )
     if settings.global_welcome is not None:
         cursor.execute(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES ('global_welcome', ?)",
-            (settings.global_welcome,)
+            "INSERT OR REPLACE INTO settings (admin_id, key, value) VALUES (?, 'global_welcome', ?)",
+            (aid, settings.global_welcome)
         )
     if settings.global_transfer_keywords is not None:
         cursor.execute(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES ('global_transfer_keywords', ?)",
-            (settings.global_transfer_keywords,)
+            "INSERT OR REPLACE INTO settings (admin_id, key, value) VALUES (?, 'global_transfer_keywords', ?)",
+            (aid, settings.global_transfer_keywords)
         )
     if settings.global_sensitive_words is not None:
         cursor.execute(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES ('global_sensitive_words', ?)",
-            (settings.global_sensitive_words,)
+            "INSERT OR REPLACE INTO settings (admin_id, key, value) VALUES (?, 'global_sensitive_words', ?)",
+            (aid, settings.global_sensitive_words)
         )
 
     conn.commit()
     conn.close()
     return {"message": "设置已更新"}
-
-
-

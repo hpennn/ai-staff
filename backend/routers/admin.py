@@ -38,7 +38,7 @@ class ShopUpdate(BaseModel):
 async def get_admin_info(admin: dict = Depends(get_current_admin)):
     return {
         "id": admin["admin_id"],
-        "username": admin["username"],
+        "username": admin.get("username", ""),
         "created_at": admin["created_at"]
     }
 
@@ -79,11 +79,11 @@ async def update_password(req: PasswordUpdate, admin: dict = Depends(get_current
 async def get_platforms(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM platform_config ORDER BY id")
+    cursor.execute("SELECT * FROM platform_config WHERE admin_id = ? ORDER BY id", (admin["admin_id"],))
     configs = [dict(row) for row in cursor.fetchall()]
     conn.close()
 
-    # Ensure all platforms exist
+    # Ensure all platforms exist (for this admin)
     all_platforms = ["微信", "淘宝", "拼多多", "京东", "抖音", "自定义"]
     existing = {c["platform"] for c in configs}
     
@@ -111,22 +111,23 @@ async def get_platforms(admin: dict = Depends(get_current_admin)):
 async def update_platform(platform: str, req: PlatformConfigUpdate, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
+    aid = admin["admin_id"]
 
     config_json_str = json.dumps(req.config_json, ensure_ascii=False)
     status = req.status or ("已接入" if req.config_json else "未配置")
 
-    cursor.execute("SELECT id FROM platform_config WHERE platform = ?", (platform,))
+    cursor.execute("SELECT id FROM platform_config WHERE admin_id = ? AND platform = ?", (aid, platform))
     existing = cursor.fetchone()
 
     if existing:
         cursor.execute(
-            "UPDATE platform_config SET config_json = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE platform = ?",
-            (config_json_str, status, platform)
+            "UPDATE platform_config SET config_json = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE admin_id = ? AND platform = ?",
+            (config_json_str, status, aid, platform)
         )
     else:
         cursor.execute(
-            "INSERT INTO platform_config (platform, config_json, status) VALUES (?, ?, ?)",
-            (platform, config_json_str, status)
+            "INSERT INTO platform_config (admin_id, platform, config_json, status) VALUES (?, ?, ?, ?)",
+            (aid, platform, config_json_str, status)
         )
 
     conn.commit()
@@ -139,7 +140,7 @@ async def test_platform(platform: str, admin: dict = Depends(get_current_admin))
     """Simulate testing platform connection."""
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM platform_config WHERE platform = ?", (platform,))
+    cursor.execute("SELECT * FROM platform_config WHERE admin_id = ? AND platform = ?", (admin["admin_id"], platform))
     config = cursor.fetchone()
     conn.close()
 
@@ -173,7 +174,7 @@ async def test_platform(platform: str, admin: dict = Depends(get_current_admin))
 async def get_shops(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM shops ORDER BY created_at DESC")
+    cursor.execute("SELECT * FROM shops WHERE admin_id = ? ORDER BY created_at DESC", (admin["admin_id"],))
     shops = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return shops
@@ -186,19 +187,20 @@ async def create_shop(shop: ShopCreate, admin: dict = Depends(get_current_admin)
 
     conn = get_db()
     cursor = conn.cursor()
+    aid = admin["admin_id"]
 
-    # Check duplicate
+    # Check duplicate (within this admin)
     cursor.execute(
-        "SELECT id FROM shops WHERE platform = ? AND shop_id = ?",
-        (shop.platform, shop.shop_id)
+        "SELECT id FROM shops WHERE admin_id = ? AND platform = ? AND shop_id = ?",
+        (aid, shop.platform, shop.shop_id)
     )
     if cursor.fetchone():
         conn.close()
         raise HTTPException(status_code=400, detail="该平台下已存在相同店铺ID")
 
     cursor.execute(
-        "INSERT INTO shops (platform, shop_name, shop_id) VALUES (?, ?, ?)",
-        (shop.platform, shop.shop_name, shop.shop_id)
+        "INSERT INTO shops (admin_id, platform, shop_name, shop_id) VALUES (?, ?, ?, ?)",
+        (aid, shop.platform, shop.shop_name, shop.shop_id)
     )
     conn.commit()
     shop_id = cursor.lastrowid
@@ -214,7 +216,7 @@ async def update_shop(shop_id: int, req: ShopUpdate, admin: dict = Depends(get_c
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM shops WHERE id = ?", (shop_id,))
+    cursor.execute("SELECT * FROM shops WHERE id = ? AND admin_id = ?", (shop_id, admin["admin_id"]))
     existing = cursor.fetchone()
     if not existing:
         conn.close()
@@ -245,14 +247,14 @@ async def delete_shop(shop_id: int, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM shops WHERE id = ?", (shop_id,))
+    cursor.execute("SELECT * FROM shops WHERE id = ? AND admin_id = ?", (shop_id, admin["admin_id"]))
     if not cursor.fetchone():
         conn.close()
         raise HTTPException(status_code=404, detail="店铺不存在")
 
     cursor.execute("DELETE FROM shops WHERE id = ?", (shop_id,))
-    # Clear shop_id from any staff bound to this shop
-    cursor.execute("UPDATE staff SET shop_id = NULL WHERE shop_id = ?", (shop_id,))
+    # Clear shop_id from any staff bound to this shop (only this admin's staff)
+    cursor.execute("UPDATE staff SET shop_id = NULL WHERE shop_id = ? AND admin_id = ?", (shop_id, admin["admin_id"]))
     conn.commit()
     conn.close()
     return {"message": "店铺已删除"}
@@ -268,8 +270,9 @@ async def get_global_conversations(admin: dict = Depends(get_current_admin)):
         SELECT c.*, s.name as staff_name, s.avatar_color
         FROM conversation c
         LEFT JOIN staff s ON c.staff_id = s.id
+        WHERE c.admin_id = ?
         ORDER BY c.created_at DESC
-    """)
+    """, (admin["admin_id"],))
     conversations = []
     for row in cursor.fetchall():
         conv = dict(row)
@@ -289,35 +292,36 @@ async def get_global_conversations(admin: dict = Depends(get_current_admin)):
 async def get_admin_stats(admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
+    aid = admin["admin_id"]
 
-    # Total conversations
-    cursor.execute("SELECT COUNT(*) as cnt FROM conversation")
+    # Total conversations (only for this admin)
+    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE admin_id = ?", (aid,))
     total_conversations = cursor.fetchone()["cnt"]
 
     # Today conversations
-    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE DATE(created_at) = DATE('now', 'localtime')")
+    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE admin_id = ? AND DATE(created_at) = DATE('now', 'localtime')", (aid,))
     today_conversations = cursor.fetchone()["cnt"]
 
     # Total messages
-    cursor.execute("SELECT messages FROM conversation")
+    cursor.execute("SELECT messages FROM conversation WHERE admin_id = ?", (aid,))
     total_messages = 0
     for row in cursor.fetchall():
         msgs = json.loads(row["messages"] or "[]")
         total_messages += len(msgs)
 
     # Today messages
-    cursor.execute("SELECT messages FROM conversation WHERE DATE(created_at) = DATE('now', 'localtime')")
+    cursor.execute("SELECT messages FROM conversation WHERE admin_id = ? AND DATE(created_at) = DATE('now', 'localtime')", (aid,))
     today_messages = 0
     for row in cursor.fetchall():
         msgs = json.loads(row["messages"] or "[]")
         today_messages += len(msgs)
 
     # Staff count
-    cursor.execute("SELECT COUNT(*) as cnt FROM staff")
+    cursor.execute("SELECT COUNT(*) as cnt FROM staff WHERE admin_id = ?", (aid,))
     staff_count = cursor.fetchone()["cnt"]
 
     # Shop count
-    cursor.execute("SELECT COUNT(*) as cnt FROM shops")
+    cursor.execute("SELECT COUNT(*) as cnt FROM shops WHERE admin_id = ?", (aid,))
     shop_count = cursor.fetchone()["cnt"]
 
     conn.close()

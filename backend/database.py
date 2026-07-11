@@ -24,6 +24,7 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS staff (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            admin_id INTEGER NOT NULL DEFAULT 0,
             name TEXT NOT NULL,
             role_description TEXT NOT NULL,
             knowledge_base TEXT DEFAULT '[]',
@@ -35,6 +36,7 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS conversation (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            admin_id INTEGER NOT NULL DEFAULT 0,
             staff_id INTEGER NOT NULL,
             session_id TEXT NOT NULL,
             messages TEXT DEFAULT '[]',
@@ -55,8 +57,11 @@ def init_db():
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            admin_id INTEGER NOT NULL DEFAULT 0,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            UNIQUE(admin_id, key)
         )
     """)
 
@@ -82,6 +87,7 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS shops (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            admin_id INTEGER NOT NULL DEFAULT 0,
             platform TEXT NOT NULL,
             shop_name TEXT NOT NULL,
             shop_id TEXT NOT NULL,
@@ -94,11 +100,13 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS platform_config (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            platform TEXT UNIQUE NOT NULL,
+            admin_id INTEGER NOT NULL DEFAULT 0,
+            platform TEXT NOT NULL,
             config_json TEXT NOT NULL DEFAULT '{}',
             status TEXT DEFAULT '未配置',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(admin_id, platform)
         )
     """)
 
@@ -130,10 +138,10 @@ def init_db():
         )
     """)
 
-    # Default settings
-    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('api_key', 'ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9')")
-    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('model_id', 'ep-20260707225043-z7nkm')")
-    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('api_base_url', 'https://ark.cn-beijing.volces.com/api/v3')")
+    # Default settings (admin_id=0 as global defaults)
+    cursor.execute("INSERT OR IGNORE INTO settings (admin_id, key, value) VALUES (0, 'api_key', 'ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9')")
+    cursor.execute("INSERT OR IGNORE INTO settings (admin_id, key, value) VALUES (0, 'model_id', 'ep-20260707225043-z7nkm')")
+    cursor.execute("INSERT OR IGNORE INTO settings (admin_id, key, value) VALUES (0, 'api_base_url', 'https://ark.cn-beijing.volces.com/api/v3')")
 
     conn.commit()
 
@@ -150,7 +158,6 @@ def init_db():
     for col, col_type in new_columns.items():
         if not _column_exists(cursor, "staff", col):
             cursor.execute(f"ALTER TABLE staff ADD COLUMN {col} {col_type}")
-
 
     # Phone verification codes
     cursor.execute("""
