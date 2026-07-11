@@ -1,8 +1,9 @@
-const CACHE_NAME = 'ai-staff-v1';
+const CACHE_NAME = 'ai-staff-v2';
 const urlsToCache = [
   '/',
-  '/static/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
 ];
 
 self.addEventListener('install', function(event) {
@@ -16,29 +17,27 @@ self.addEventListener('install', function(event) {
         console.log('Cache install error:', err);
       })
   );
+  self.skipWaiting();
 });
 
 self.addEventListener('fetch', function(event) {
   event.respondWith(
     caches.match(event.request)
       .then(function(response) {
-        if (response) {
-          return response;
-        }
+        if (response) return response;
         return fetch(event.request).then(
           function(response) {
             if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
             var responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                cache.put(event.request, responseToCache);
-              });
+            caches.open(CACHE_NAME).then(function(cache) {
+              cache.put(event.request, responseToCache);
+            });
             return response;
           }
         ).catch(function() {
-          return caches.match('/static/index.html');
+          return caches.match('/');
         });
       })
   );
@@ -48,12 +47,13 @@ self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(cacheNames) {
       return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+        cacheNames.filter(function(cacheName) {
+          return cacheName !== CACHE_NAME;
+        }).map(function(cacheName) {
+          return caches.delete(cacheName);
         })
       );
     })
   );
+  self.clients.claim();
 });
