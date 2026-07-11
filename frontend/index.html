@@ -107,6 +107,15 @@
                         <input id="settings-login-code" type="text" placeholder="验证码" maxlength="6" class="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors" onkeydown="if(event.key==='Enter')doPhoneLogin()">
                         <button id="send-code-btn" onclick="sendVerifyCode()" class="px-4 py-2.5 bg-indigo-100 text-indigo-600 text-sm font-medium rounded-xl hover:bg-indigo-200 transition-colors whitespace-nowrap">获取验证码</button>
                     </div>
+                    <!-- 验证码显示区域 -->
+                    <div id="vcode-display" class="hidden bg-green-50 border-2 border-green-300 rounded-xl p-3 text-center">
+                        <div class="text-xs text-green-600 mb-1">📱 当前验证码（10分钟内有效）</div>
+                        <div class="flex items-center justify-center gap-3">
+                            <span id="vcode-number" class="text-3xl font-bold text-green-700 tracking-widest font-mono"></span>
+                            <button onclick="copyVcode()" class="px-3 py-1.5 bg-green-200 text-green-700 text-xs font-medium rounded-lg hover:bg-green-300 transition-colors">📋 复制</button>
+                        </div>
+                        <div id="vcode-expire" class="text-xs text-green-500 mt-1"></div>
+                    </div>
                     <div id="settings-login-error" class="text-red-500 text-xs hidden"></div>
                     <button id="settings-login-btn" onclick="doPhoneLogin()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl py-2.5 text-sm transition-colors shadow-sm shadow-indigo-200">登录 / 注册</button>
                 </div>
@@ -714,6 +723,22 @@
 
     let codeTimer = null;
 
+    function copyVcode() {
+        const code = document.getElementById('vcode-number').textContent;
+        if (!code) return;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(code).then(() => showToast('已复制: ' + code));
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('已复制: ' + code);
+        }
+    }
+
     async function sendVerifyCode() {
         const phone = document.getElementById('settings-login-phone').value.trim();
         const errorEl = document.getElementById('settings-login-error');
@@ -737,15 +762,39 @@
             if (!res.ok) throw new Error(data.detail || '发送失败');
 
             errorEl.classList.add('hidden');
-            showToast('验证码已发送');
 
-            // 开发阶段：显示验证码方便调试
+            // 显示验证码区域 + 自动填充 + 倒计时
             if (data.code) {
                 console.log('【开发调试】验证码:', data.code);
-                showToast('验证码: ' + data.code + '（已复制到调试日志）');
+                // 自动填充到输入框
+                document.getElementById('settings-login-code').value = data.code;
+                // 显示大字号验证码卡片
+                const vcodeDisplay = document.getElementById('vcode-display');
+                const vcodeNumber = document.getElementById('vcode-number');
+                const vcodeExpire = document.getElementById('vcode-expire');
+                vcodeNumber.textContent = data.code;
+                vcodeDisplay.classList.remove('hidden');
+                // 10分钟过期倒计时
+                let expireSec = 600;
+                vcodeExpire.textContent = '剩余 10:00';
+                if (window._vcodeExpireTimer) clearInterval(window._vcodeExpireTimer);
+                window._vcodeExpireTimer = setInterval(() => {
+                    expireSec--;
+                    if (expireSec <= 0) {
+                        clearInterval(window._vcodeExpireTimer);
+                        vcodeDisplay.classList.add('hidden');
+                        vcodeExpire.textContent = '验证码已过期，请重新获取';
+                    } else {
+                        const m = Math.floor(expireSec / 60);
+                        const s = expireSec % 60;
+                        vcodeExpire.textContent = '剩余 ' + m + ':' + (s < 10 ? '0' : '') + s;
+                    }
+                }, 1000);
             }
 
-            // 倒计时60秒
+            showToast('验证码已发送');
+
+            // 发送按钮倒计时60秒
             let sec = 60;
             btn.textContent = sec + 's';
             codeTimer = setInterval(() => {
@@ -794,6 +843,9 @@
             localStorage.setItem('admin_token', token);
             errorEl.classList.add('hidden');
             showToast('登录成功');
+                // 隐藏验证码显示
+                const vcodeDisplay = document.getElementById('vcode-display');
+                if (vcodeDisplay) vcodeDisplay.classList.add('hidden');
             updateSettingsUI();
             loadSettingsPage();
         } catch (e) {
