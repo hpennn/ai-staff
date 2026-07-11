@@ -40,6 +40,7 @@ class StaffUpdate(BaseModel):
     auto_reply_rules: Optional[str] = None
     transfer_message: Optional[str] = None
     shop_id: Optional[int] = None
+    multilingual: Optional[int] = None
 
 
 class StaffResponse(BaseModel):
@@ -55,6 +56,7 @@ class StaffResponse(BaseModel):
     auto_reply_rules: Optional[str] = "[]"
     transfer_message: Optional[str] = "正在为您转接人工客服，请稍候..."
     shop_id: Optional[int] = None
+    multilingual: Optional[int] = 0
     created_at: str
 
 

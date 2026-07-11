@@ -175,6 +175,8 @@ async def update_staff(staff_id: int, staff: StaffUpdate, admin: dict = Depends(
         updates["auto_reply_rules"] = staff.auto_reply_rules
     if staff.transfer_message is not None:
         updates["transfer_message"] = staff.transfer_message
+    if staff.multilingual is not None:
+        updates["multilingual"] = staff.multilingual
     if staff.shop_id is not None:
         updates["shop_id"] = staff.shop_id
 

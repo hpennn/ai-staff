@@ -1,6 +1,7 @@
 import httpx
 import json
 import os
+from datetime import datetime
 from database import get_db
 
 ARK_API_KEY = os.environ.get("ARK_API_KEY", "ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9")
@@ -46,6 +47,11 @@ def build_system_prompt(staff):
                 lines = knowledge_base.strip().split("\n")
                 kb_text = "\n".join(lines)
                 system_prompt += f"\n\n以下是你的知识库，请在回答时参考这些内容：\n{kb_text}"
+
+    # Feature 6: Multilingual support
+    multilingual = staff.get("multilingual", 0)
+    if multilingual:
+        system_prompt += "\n\n请检测用户消息的语言，并用相同语言回复。如果用户用中文就用中文回复，用英文就用英文回复，以此类推。"
 
     return system_prompt
 
@@ -153,6 +159,44 @@ def filter_sensitive_words(staff_id: int, text: str) -> str:
     return result
 
 
+def check_schedule(staff_id: int) -> dict:
+    """Feature 7: Check if staff is currently on schedule. Returns {on_schedule: bool, info: str}"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM schedules WHERE staff_id = ? AND is_active = 1", (staff_id,))
+    schedules = cursor.fetchall()
+    conn.close()
+
+    if not schedules:
+        # No schedule configured = always available
+        return {"on_schedule": True, "info": ""}
+
+    now = datetime.now()
+    current_day = now.weekday()  # 0=Monday ... 6=Sunday
+    current_time = now.strftime("%H:%M")
+
+    DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+
+    # Find matching schedule for today
+    for sched in schedules:
+        sched_dict = dict(sched)
+        if sched_dict["day_of_week"] == current_day:
+            if sched_dict["start_time"] <= current_time <= sched_dict["end_time"]:
+                return {"on_schedule": True, "info": ""}
+
+    # Not on schedule - build info string
+    schedule_info = []
+    for sched in schedules:
+        sched_dict = dict(sched)
+        day_name = DAY_NAMES[sched_dict["day_of_week"]] if 0 <= sched_dict["day_of_week"] <= 6 else "未知"
+        schedule_info.append(f"{day_name} {sched_dict['start_time']}-{sched_dict['end_time']}")
+
+    return {
+        "on_schedule": False,
+        "info": f"该员工当前不在工作时间，工作时间：{'、'.join(schedule_info)}"
+    }
+
+
 async def chat_with_ai(staff_id: int, session_id: str, user_message: str, conversation_id: int = None):
     conn = get_db()
     cursor = conn.cursor()
@@ -165,6 +209,18 @@ async def chat_with_ai(staff_id: int, session_id: str, user_message: str, conver
         raise ValueError(f"Staff with id {staff_id} not found")
 
     staff_dict = dict(staff)
+
+    # Feature 7: Check schedule
+    schedule_result = check_schedule(staff_id)
+    if not schedule_result["on_schedule"]:
+        conn.close()
+        return {
+            "reply": schedule_result["info"],
+            "session_id": session_id,
+            "staff_id": staff_id,
+            "conversation_id": None
+        }
+
     system_prompt = build_system_prompt(staff_dict)
 
     # Get or create conversation

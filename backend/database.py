@@ -154,6 +154,7 @@ def init_db():
         "auto_reply_rules": "TEXT DEFAULT '[]'",
         "transfer_message": "TEXT DEFAULT '正在为您转接人工客服，请稍候...'",
         "shop_id": "INTEGER",
+        "multilingual": "INTEGER DEFAULT 0",
     }
     for col, col_type in new_columns.items():
         if not _column_exists(cursor, "staff", col):
@@ -170,9 +171,37 @@ def init_db():
         )
     """)
 
-
     # Add rating column to conversation table
     if not _column_exists(cursor, "conversation", "rating"):
         cursor.execute("ALTER TABLE conversation ADD COLUMN rating TEXT DEFAULT ''")
+
+    # Feature 5: Broadcasts table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS broadcasts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            admin_id INTEGER NOT NULL DEFAULT 0,
+            staff_id INTEGER NOT NULL,
+            message TEXT NOT NULL,
+            schedule_time TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
+        )
+    """)
+
+    # Feature 7: Schedules table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS schedules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            admin_id INTEGER NOT NULL DEFAULT 0,
+            staff_id INTEGER NOT NULL,
+            day_of_week INTEGER NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            is_active INTEGER DEFAULT 1,
+            FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
+        )
+    """)
+
     conn.commit()
     conn.close()

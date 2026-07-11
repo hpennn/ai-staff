@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
-from routers import chat, staff, webhook, auth, admin, subscription, upload
+from routers import chat, staff, webhook, auth, admin, subscription, upload, broadcast, schedule
 
 # Initialize database
 init_db()
@@ -36,6 +36,10 @@ app.include_router(staff.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(subscription.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
+# Feature 5: Broadcast
+app.include_router(broadcast.router, prefix="/api")
+# Feature 7: Schedule
+app.include_router(schedule.router, prefix="/api")
 
 
 

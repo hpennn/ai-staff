@@ -421,6 +421,38 @@
                 <input id="edit-transfer-msg" type="text" placeholder="正在为您转接人工客服，请稍候..." class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
             </div>
 
+
+            <!-- Advanced Settings -->
+            <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                    高级设置
+                </h3>
+                <div class="space-y-3">
+                    <!-- Multilingual Toggle -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-700">多语言自动识别</p>
+                            <p class="text-xs text-slate-400">开启后AI将自动用用户语言回复</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="edit-multilingual" class="sr-only peer">
+                            <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Settings -->
+            <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    排班设置
+                </h3>
+                <p class="text-xs text-slate-400 mb-3">设置员工工作时间，非排班时段来访者会看到提示</p>
+                <div id="schedule-table" class="space-y-2">
+                </div>
+            </div>
             <!-- Embed Code Section -->
             <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
                 <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
@@ -501,6 +533,49 @@
         </div>
     </div>
 
+        </div>
+
+            <!-- Broadcast Messages -->
+            <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                    群发消息
+                </h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">选择员工</label>
+                        <select id="broadcast-staff" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
+                            <option value="">-- 请选择员工 --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">消息内容</label>
+                        <textarea id="broadcast-message" rows="2" placeholder="输入要群发的消息内容" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">发送时间</label>
+                        <div class="flex gap-2 items-center">
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="broadcast-time" value="now" checked class="text-indigo-500 focus:ring-indigo-400">
+                                <span class="text-sm text-slate-700">立即发送</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="broadcast-time" value="scheduled" class="text-indigo-500 focus:ring-indigo-400">
+                                <span class="text-sm text-slate-700">定时</span>
+                            </label>
+                            <input type="datetime-local" id="broadcast-schedule-time" class="flex-1 border border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:border-indigo-400 transition-colors disabled:opacity-50" disabled>
+                        </div>
+                    </div>
+                    <button onclick="createBroadcast()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-xl py-2 transition-colors">创建群发</button>
+                </div>
+                <!-- Broadcast list -->
+                <div class="mt-4">
+                    <h4 class="text-xs font-medium text-slate-500 mb-2">群发任务列表</h4>
+                    <div id="broadcast-list" class="space-y-2 max-h-60 overflow-y-auto">
+                        <p class="text-xs text-slate-400 text-center py-4">暂无群发任务</p>
+                    </div>
+                </div>
+            </div>
     <!-- ===== Sub Page: Staff Conversations ===== -->
     <div id="page-staff-convs" class="sub-page">
         <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100">
@@ -1488,6 +1563,9 @@
         document.getElementById('edit-welcome').value = staff.welcome_message || '';
         document.getElementById('edit-transfer-msg').value = staff.transfer_message || '正在为您转接人工客服，请稍候...';
 
+        // Multilingual
+        document.getElementById('edit-multilingual').checked = !!staff.multilingual;
+
         // Knowledge base
         const kb = safeJsonParse(staff.knowledge_base, []);
         document.getElementById('edit-kb').value = kb.join('\n');
@@ -1512,6 +1590,9 @@
 
         // Shop section
         onPlatformChange();
+
+        // Schedule data
+        loadScheduleData(staffId);
 
         document.getElementById('page-edit-staff').classList.add('active');
     }
@@ -1538,6 +1619,9 @@
             document.getElementById('edit-danger-zone').classList.add('hidden');
             updateEmbedCodes();
             onPlatformChange();
+            document.getElementById('edit-multilingual').checked = false;
+            editScheduleData = {};
+            renderScheduleTable();
             document.getElementById('page-edit-staff').classList.add('active');
         }
     }
@@ -1560,6 +1644,7 @@
             auto_reply_rules: JSON.stringify(editAutoReplyRules),
             transfer_message: document.getElementById('edit-transfer-msg').value.trim(),
             knowledge_base: document.getElementById('edit-kb').value
+            multilingual: document.getElementById('edit-multilingual').checked ? 1 : 0,
         };
 
         // Shop ID
@@ -1585,6 +1670,10 @@
                 body: JSON.stringify(payload)
             });
             if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '保存失败'); }
+            // Save schedule if editing existing staff
+            if (editingStaffId) {
+                await saveScheduleData(editingStaffId);
+            }
             closeEditStaff();
             await loadStaffList();
             showToast('保存成功');
@@ -1817,6 +1906,9 @@
     // ===== Stats =====
     async function showStatsPage() {
         document.getElementById('page-stats').classList.add('active');
+        // Load broadcast staff options
+        loadBroadcastStaffOptions();
+        loadBroadcastList();
         try {
             const res = await authFetch(API_BASE + '/stats/overview');
             const data = await res.json();
@@ -2292,6 +2384,199 @@
                 showToast('感谢您的评价！');
             }
         }).catch(() => {});
+    }
+
+    // ===== Feature 5: Broadcast =====
+    let broadcastList = [];
+
+    // Toggle schedule time input
+    document.addEventListener("change", function(e) {
+        if (e.target.name === "broadcast-time") {
+            const timeInput = document.getElementById("broadcast-schedule-time");
+            timeInput.disabled = e.target.value !== "scheduled";
+        }
+    });
+
+    async function loadBroadcastList() {
+        try {
+            const res = await authFetch(API_BASE + "/broadcasts");
+            broadcastList = await res.json();
+            renderBroadcastList();
+        } catch (e) { console.error(e); }
+    }
+
+    function renderBroadcastList() {
+        const container = document.getElementById("broadcast-list");
+        if (!broadcastList || broadcastList.length === 0) {
+            container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">暂无群发任务</p>';
+            return;
+        }
+        const statusMap = { pending: "待执行", completed: "已完成", cancelled: "已取消" };
+        const statusColor = { pending: "bg-amber-100 text-amber-700", completed: "bg-green-100 text-green-700", cancelled: "bg-slate-100 text-slate-500" };
+        let html = "";
+        broadcastList.forEach(b => {
+            const status = statusMap[b.status] || b.status;
+            const color = statusColor[b.status] || "bg-slate-100 text-slate-500";
+            const time = b.created_at ? new Date(b.created_at).toLocaleString("zh-CN") : "";
+            html += `<div class="flex items-start gap-2 py-2 border-b border-slate-50">
+                <div class="w-7 h-7 rounded-full avatar-initial text-xs flex-shrink-0" style="background:${b.avatar_color || '#6366f1'}">${(b.staff_name || '?').charAt(0)}</div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1">
+                        <span class="text-xs font-medium text-slate-700">${escapeHtml(b.staff_name || '未知')}</span>
+                        <span class="tag ${color} text-[10px]">${status}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 truncate">${escapeHtml(b.message)}</p>
+                    <p class="text-[10px] text-slate-400">${time}</p>
+                </div>
+                <div class="flex gap-1 flex-shrink-0">
+                    ${b.status === 'pending' ? `<button onclick="executeBroadcast(${b.id})" class="text-xs text-indigo-500 p-1">执行</button>
+                    <button onclick="deleteBroadcast(${b.id})" class="text-xs text-red-400 p-1">删除</button>` : `<button onclick="deleteBroadcast(${b.id})" class="text-xs text-red-400 p-1">删除</button>`}
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    async function createBroadcast() {
+        const staffId = parseInt(document.getElementById("broadcast-staff").value);
+        const message = document.getElementById("broadcast-message").value.trim();
+        const timeType = document.querySelector("input[name=broadcast-time]:checked").value;
+
+        if (!staffId) { showToast("请选择员工"); return; }
+        if (!message) { showToast("请输入消息内容"); return; }
+
+        const payload = { staff_id: staffId, message };
+        if (timeType === "scheduled") {
+            const scheduleTime = document.getElementById("broadcast-schedule-time").value;
+            if (!scheduleTime) { showToast("请选择定时发送时间"); return; }
+            payload.schedule_time = scheduleTime;
+        }
+
+        try {
+            const res = await authFetch(API_BASE + "/broadcasts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || "创建失败"); }
+            showToast("群发任务已创建");
+            document.getElementById("broadcast-message").value = "";
+            loadBroadcastList();
+        } catch (e) { showToast(e.message); }
+    }
+
+    async function executeBroadcast(broadcastId) {
+        if (!confirm("确定立即执行此群发任务？")) return;
+        try {
+            const res = await authFetch(API_BASE + "/broadcasts/" + broadcastId + "/execute", { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || "执行失败");
+            showToast(data.message);
+            loadBroadcastList();
+        } catch (e) { showToast(e.message); }
+    }
+
+    async function deleteBroadcast(broadcastId) {
+        if (!confirm("确定删除此群发任务？")) return;
+        try {
+            const res = await authFetch(API_BASE + "/broadcasts/" + broadcastId, { method: "DELETE" });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || "删除失败"); }
+            showToast("已删除");
+            loadBroadcastList();
+        } catch (e) { showToast(e.message); }
+    }
+
+    function loadBroadcastStaffOptions() {
+        const select = document.getElementById("broadcast-staff");
+        let html = '<option value="">-- 请选择员工 --</option>';
+        staffList.forEach(s => {
+            html += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
+        });
+        select.innerHTML = html;
+    }
+
+    // ===== Feature 7: Schedule =====
+    let editScheduleData = {}; // {day_of_week: {start_time, end_time, is_active, id}}
+    const DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+
+    function renderScheduleTable() {
+        const container = document.getElementById("schedule-table");
+        let html = "";
+        DAY_NAMES.forEach((name, idx) => {
+            const data = editScheduleData[idx] || { start_time: "09:00", end_time: "18:00", is_active: 0, id: null };
+            const active = data.is_active ? "checked" : "";
+            html += `<div class="flex items-center gap-2 py-1.5">
+                <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                    <input type="checkbox" data-schedule-day="${idx}" class="sr-only peer schedule-toggle" ${active}>
+                    <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-500"></div>
+                </label>
+                <span class="text-sm text-slate-700 w-8">${name}</span>
+                <input type="time" data-schedule-start="${idx}" value="${data.start_time}" class="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:border-indigo-400 transition-colors" ${data.is_active ? "" : "disabled"}>
+                <span class="text-xs text-slate-400">至</span>
+                <input type="time" data-schedule-end="${idx}" value="${data.end_time}" class="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:border-indigo-400 transition-colors" ${data.is_active ? "" : "disabled"}>
+            </div>`;
+        });
+        container.innerHTML = html;
+
+        // Bind toggle events
+        container.querySelectorAll(".schedule-toggle").forEach(cb => {
+            cb.addEventListener("change", function() {
+                const day = parseInt(this.dataset.scheduleDay);
+                const row = this.closest(".flex");
+                const startInput = row.querySelector("[data-schedule-start]");
+                const endInput = row.querySelector("[data-schedule-end]");
+                startInput.disabled = !this.checked;
+                endInput.disabled = !this.checked;
+            });
+        });
+    }
+
+    async function loadScheduleData(staffId) {
+        editScheduleData = {};
+        if (!staffId) { renderScheduleTable(); return; }
+        try {
+            const res = await authFetch(API_BASE + "/schedules");
+            const schedules = await res.json();
+            const filtered = schedules.filter(s => s.staff_id === staffId);
+            filtered.forEach(s => {
+                editScheduleData[s.day_of_week] = {
+                    start_time: s.start_time,
+                    end_time: s.end_time,
+                    is_active: s.is_active,
+                    id: s.id
+                };
+            });
+        } catch (e) { console.error(e); }
+        renderScheduleTable();
+    }
+
+    async function saveScheduleData(staffId) {
+        const rows = document.querySelectorAll("[data-schedule-day]");
+        for (const cb of rows) {
+            const day = parseInt(cb.dataset.scheduleDay);
+            const row = cb.closest(".flex");
+            const startTime = row.querySelector("[data-schedule-start]").value;
+            const endTime = row.querySelector("[data-schedule-end]").value;
+            const isActive = cb.checked ? 1 : 0;
+
+            // Only save if active or if there was an existing schedule
+            const existing = editScheduleData[day];
+            if (isActive || existing) {
+                try {
+                    if (isActive) {
+                        await authFetch(API_BASE + "/schedules", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ staff_id: staffId, day_of_week: day, start_time: startTime, end_time: endTime, is_active: isActive })
+                        });
+                    } else if (existing     // ===== Init =====
+    init();    // ===== Init =====
+    init(); existing.id) {
+                        await authFetch(API_BASE + "/schedules/" + existing.id, { method: "DELETE" });
+                    }
+                } catch (e) { console.error(e); }
+            }
+        }
     }
 
     // ===== Init =====
