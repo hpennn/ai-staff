@@ -15,6 +15,81 @@ AVATAR_COLORS = [
     "#06b6d4", "#3b82f6", "#6366f1", "#a855f7"
 ]
 
+INDUSTRY_TEMPLATES = [
+    {
+        "id": "ecommerce",
+        "name": "电商客服",
+        "icon": "🛍️",
+        "role_description": "你是XX店铺的客服专员，负责回答商品咨询、订单查询、退换货等问题。语气亲切，称呼顾客为'亲'",
+        "welcome_message": "亲，欢迎光临！有什么可以帮您的吗？😊",
+        "transfer_keywords": ["投诉", "退款", "举报"]
+    },
+    {
+        "id": "restaurant",
+        "name": "餐饮客服",
+        "icon": "🍽️",
+        "role_description": "你是XX餐厅的客服，负责回答菜品推荐、预订座位、外卖配送等问题",
+        "welcome_message": "您好！欢迎光临XX餐厅，请问有什么可以帮您？",
+        "transfer_keywords": ["投诉", "食物中毒", "过敏"]
+    },
+    {
+        "id": "education",
+        "name": "教育培训",
+        "icon": "📚",
+        "role_description": "你是XX教育机构的课程顾问，负责解答课程咨询、报名流程、上课安排等问题",
+        "welcome_message": "您好！欢迎来到XX教育，想了解一下哪方面的课程呢？",
+        "transfer_keywords": ["退费", "投诉", "转班"]
+    },
+    {
+        "id": "medical",
+        "name": "医疗咨询",
+        "icon": "🏥",
+        "role_description": "你是XX健康平台的咨询助手，提供健康知识科普和就医指引，不做诊断和处方",
+        "welcome_message": "您好！我是健康咨询助手，请问有什么健康问题想咨询？⚠️温馨提示：本服务不提供医疗诊断，如有紧急情况请拨打120",
+        "transfer_keywords": ["急诊", "开药", "诊断"]
+    },
+    {
+        "id": "legal",
+        "name": "法律咨询",
+        "icon": "⚖️",
+        "role_description": "你是XX法律咨询平台的助手，提供法律知识普及和维权指引",
+        "welcome_message": "您好！我是法律咨询助手，请问遇到了什么法律问题？",
+        "transfer_keywords": ["委托", "起诉", "律师"]
+    },
+    {
+        "id": "realestate",
+        "name": "房产中介",
+        "icon": "🏠",
+        "role_description": "你是XX房产的置业顾问，负责房源推荐、看房预约、交易流程咨询",
+        "welcome_message": "您好！我是XX房产置业顾问，请问您想了解哪里的房子？",
+        "transfer_keywords": ["投诉", "退房", "维权"]
+    },
+    {
+        "id": "travel",
+        "name": "旅游客服",
+        "icon": "✈️",
+        "role_description": "你是XX旅行社的客服，负责旅游线路推荐、行程咨询、预订服务",
+        "welcome_message": "您好！欢迎来到XX旅行社，想去哪里玩呢？😊",
+        "transfer_keywords": ["投诉", "退票", "行程变更"]
+    },
+    {
+        "id": "general",
+        "name": "通用客服",
+        "icon": "💬",
+        "role_description": "你是一个专业的客服专员，负责回答用户的各类问题，提供耐心细致的服务",
+        "welcome_message": "您好！请问有什么可以帮您？",
+        "transfer_keywords": ["投诉", "经理"]
+    }
+]
+
+
+@router.get("/templates")
+async def get_templates():
+    """获取行业模板列表"""
+    return INDUSTRY_TEMPLATES
+
+
+
 
 @router.get("/staff")
 async def get_staff_list(admin_id: Optional[int] = Query(None)):
@@ -173,6 +248,14 @@ async def get_staff_stats(staff_id: int):
         msgs = json.loads(row["messages"] or "[]")
         today_messages += len(msgs)
 
+    # Satisfaction stats
+    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE staff_id = ? AND rating = 'good'", (staff_id,))
+    good_count = cursor.fetchone()["cnt"]
+    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE staff_id = ? AND rating = 'bad'", (staff_id,))
+    bad_count = cursor.fetchone()["cnt"]
+    rated_count = good_count + bad_count
+    satisfaction_rate = round(good_count / rated_count * 100, 1) if rated_count > 0 else 0
+
     conn.close()
 
     return {
@@ -180,7 +263,10 @@ async def get_staff_stats(staff_id: int):
         "total_conversations": total_conversations,
         "today_conversations": today_conversations,
         "total_messages": total_messages,
-        "today_messages": today_messages
+        "today_messages": today_messages,
+        "good_count": good_count,
+        "bad_count": bad_count,
+        "satisfaction_rate": satisfaction_rate
     }
 
 
@@ -242,6 +328,14 @@ async def get_stats_overview(admin: dict = Depends(get_current_admin)):
     # Sort by messages descending
     staff_ranking.sort(key=lambda x: x["messages"], reverse=True)
 
+    # Satisfaction stats
+    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE admin_id = ? AND rating = 'good'", (aid,))
+    total_good = cursor.fetchone()["cnt"]
+    cursor.execute("SELECT COUNT(*) as cnt FROM conversation WHERE admin_id = ? AND rating = 'bad'", (aid,))
+    total_bad = cursor.fetchone()["cnt"]
+    total_rated = total_good + total_bad
+    total_satisfaction_rate = round(total_good / total_rated * 100, 1) if total_rated > 0 else 0
+
     conn.close()
 
     return {
@@ -250,7 +344,10 @@ async def get_stats_overview(admin: dict = Depends(get_current_admin)):
         "total_messages": total_messages,
         "today_messages": today_messages,
         "staff_count": staff_count,
-        "staff_ranking": staff_ranking
+        "staff_ranking": staff_ranking,
+        "good_count": total_good,
+        "bad_count": total_bad,
+        "satisfaction_rate": total_satisfaction_rate
     }
 
 

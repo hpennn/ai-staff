@@ -170,5 +170,9 @@ def init_db():
         )
     """)
 
+
+    # Add rating column to conversation table
+    if not _column_exists(cursor, "conversation", "rating"):
+        cursor.execute("ALTER TABLE conversation ADD COLUMN rating TEXT DEFAULT ''")
     conn.commit()
     conn.close()

@@ -8,6 +8,7 @@ from typing import Optional, List
 import os
 import tempfile
 import logging
+import httpx
 
 router = APIRouter()
 
@@ -152,6 +153,73 @@ def read_json_file(filepath: str) -> List[str]:
     except Exception as e:
         logger.error(f"读取JSON文件失败: {e}")
         raise HTTPException(status_code=400, detail=f"JSON解析失败: {str(e)}")
+
+
+
+
+class ImportUrlRequest(BaseModel):
+    url: str
+
+
+class ImportUrlResponse(BaseModel):
+    lines: List[str]
+    total_lines: int
+    url: str
+
+
+@router.post("/import-url", response_model=ImportUrlResponse)
+@router.post("/import-url", response_model=ImportUrlResponse)
+async def import_url(request: ImportUrlRequest):
+    """从网页URL导入文本内容到知识库"""
+    import re as regex_module
+    from html import unescape as html_unescape
+
+    url = request.url.strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="请输入网址")
+
+    if not url.startswith(('http://', 'https://')):
+        raise HTTPException(status_code=400, detail="请输入有效的网址（以http://或https://开头）")
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; AI-Staff-Bot/1.0)"})
+            resp.raise_for_status()
+            html_content = resp.text
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=408, detail="网页加载超时，请稍后重试")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=400, detail=f"网页访问失败: HTTP {e.response.status_code}")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"无法访问该网址: {str(e)}")
+
+    # Remove script and style tags with content
+    html_content = regex_module.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=regex_module.DOTALL | regex_module.IGNORECASE)
+    html_content = regex_module.sub(r'<style[^>]*>.*?</style>', '', html_content, flags=regex_module.DOTALL | regex_module.IGNORECASE)
+    html_content = regex_module.sub(r'<noscript[^>]*>.*?</noscript>', '', html_content, flags=regex_module.DOTALL | regex_module.IGNORECASE)
+
+    # Remove HTML tags
+    text = regex_module.sub(r'<[^>]+>', ' ', html_content)
+
+    # Decode HTML entities
+    text = html_unescape(text)
+
+    # Clean up whitespace
+    text = regex_module.sub(r'[ \t]+', ' ', text)
+    text = regex_module.sub(r'\n{2,}', '\n', text)
+
+    # Split into lines and filter
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+    # Limit to 200 lines
+    if len(lines) > 200:
+        lines = lines[:200]
+
+    return ImportUrlResponse(
+        lines=lines,
+        total_lines=len(lines),
+        url=url
+    )
 
 
 @router.post("/upload/file", response_model=FileContentResponse)

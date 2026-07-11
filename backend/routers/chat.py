@@ -83,3 +83,30 @@ async def send_message(request: ChatRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"聊天服务异常: {str(e)}")
+
+
+class RateRequest(BaseModel):
+    rating: str  # "good" or "bad"
+
+
+@router.post("/rate/{session_id}")
+async def rate_conversation(session_id: str, request: RateRequest):
+    """Rate a conversation (good/bad)"""
+    if request.rating not in ("good", "bad"):
+        raise HTTPException(status_code=400, detail="rating must be 'good' or 'bad'")
+    
+    from database import get_db
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM conversation WHERE session_id = ?", (session_id,))
+    conv = cursor.fetchone()
+    if not conv:
+        conn.close()
+        raise HTTPException(status_code=404, detail="对话不存在")
+    
+    cursor.execute("UPDATE conversation SET rating = ? WHERE session_id = ?", (request.rating, session_id))
+    conn.commit()
+    conn.close()
+    
+    return {"message": "评价成功", "rating": request.rating}
