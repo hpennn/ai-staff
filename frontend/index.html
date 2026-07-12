@@ -43,6 +43,12 @@
         .sub-page.active { display: flex; }
         .platform-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
         .platform-card .status-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 12px; }
+        /* Onboarding animations */
+        .onboard-industry-card.selected { border-color: #6366f1 !important; background-color: #eef2ff !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+        #onboarding-overlay .fade-in { animation: onboardFadeIn 0.4s ease; }
+        @keyframes onboardFadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .animate-bounce { animation: bounce 1s infinite; }
     </style>
 </head>
 <body class="bg-slate-50 h-screen overflow-hidden">
@@ -63,11 +69,30 @@
                 <button onclick="showAddStaffModal()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xl hover:bg-indigo-600 transition-colors shadow-sm">+</button>
             </div>
         </div>
+        <div id="quick-start-banner" class="hidden mx-4 mt-3 mb-0">
+            <div onclick="showOnboardingOrAddStaff()" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:shadow-purple-200 transition-all active:scale-[0.98]">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white font-semibold text-sm">还没创建AI客服？</p>
+                        <p class="text-white/80 text-xs mt-0.5">点击这里3分钟搞定 →</p>
+                    </div>
+                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="staff-list" class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            <div id="empty-state" class="flex flex-col items-center justify-center h-full text-slate-400">
-                <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <p class="text-sm">还没有客服员工</p>
-                <p class="text-xs mt-1">点击右上角 + 创建第一个客服员工</p>
+            <div id="empty-state" class="flex flex-col items-center justify-center h-full px-8">
+                <div class="w-24 h-24 mb-5 bg-indigo-50 rounded-full flex items-center justify-center">
+                    <svg class="w-12 h-12 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <p class="text-lg font-semibold text-slate-700 mb-1">还没有AI客服员工</p>
+                <p class="text-sm text-slate-400 mb-6">创建一个AI客服只需30秒</p>
+                <button onclick="showOnboardingOrAddStaff()" class="w-full max-w-xs bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-medium rounded-2xl py-3.5 text-sm transition-all shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 active:scale-95">
+                    ✨ 立即创建第一个员工
+                </button>
+                <p class="text-xs text-slate-400 mt-3">选择行业模板，填写基本信息即可开始使用</p>
             </div>
         </div>
     </div>
@@ -234,13 +259,19 @@
                     </div>
                 </div>
 
-                <!-- API Settings -->
+                <!-- API Settings (Collapsed by default) -->
                 <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                    <h3 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
-                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        API配置
-                    </h3>
-                    <div class="space-y-3">
+                    <button onclick="toggleAdvancedSettings()" class="w-full flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <span class="text-sm text-slate-400 font-medium">⚙️ 高级设置（技术人员使用）</span>
+                        </div>
+                        <svg id="advanced-settings-arrow" class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="advanced-settings-content" class="hidden mt-3 space-y-3">
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-2">
+                            <p class="text-xs text-amber-700">⚠️ 修改这些设置可能影响AI客服的正常使用，如非技术人员请勿操作</p>
+                        </div>
                         <div>
                             <label class="text-xs font-medium text-slate-500 mb-1 block">API Key</label>
                             <input id="setting-api-key" type="text" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors">
@@ -596,6 +627,157 @@
             <h1 class="text-lg font-bold text-slate-800">对话详情</h1>
         </div>
         <div id="conv-detail-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3"></div>
+    </div>
+
+
+    <!-- ===== Onboarding Wizard ===== -->
+    <div id="onboarding-overlay" class="hidden fixed inset-0 z-[60] bg-white flex flex-col">
+        <!-- Step indicators -->
+        <div class="flex items-center justify-center gap-2 pt-6 pb-4 px-4">
+            <div id="onboard-dot-1" class="w-8 h-1.5 rounded-full bg-indigo-500 transition-all"></div>
+            <div id="onboard-dot-2" class="w-8 h-1.5 rounded-full bg-slate-200 transition-all"></div>
+            <div id="onboard-dot-3" class="w-8 h-1.5 rounded-full bg-slate-200 transition-all"></div>
+            <div id="onboard-dot-4" class="w-8 h-1.5 rounded-full bg-slate-200 transition-all"></div>
+        </div>
+
+        <!-- Step 1: Welcome -->
+        <div id="onboard-step-1" class="flex-1 flex flex-col items-center justify-center px-8 text-center fade-in">
+            <div class="w-28 h-28 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-3xl flex items-center justify-center mb-8 shadow-xl shadow-indigo-200">
+                <svg class="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800 mb-3">欢迎使用AI客服员工！</h1>
+            <p class="text-slate-500 text-sm leading-relaxed mb-8">只需3步即可拥有你的AI客服团队<br>简单、快速、开箱即用</p>
+            <div class="flex items-center gap-6 mb-8 text-slate-400">
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center mb-1">
+                        <span class="text-indigo-500 font-bold text-sm">1</span>
+                    </div>
+                    <span class="text-xs">选行业</span>
+                </div>
+                <div class="w-6 h-px bg-slate-200"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center mb-1">
+                        <span class="text-indigo-500 font-bold text-sm">2</span>
+                    </div>
+                    <span class="text-xs">填信息</span>
+                </div>
+                <div class="w-6 h-px bg-slate-200"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center mb-1">
+                        <span class="text-indigo-500 font-bold text-sm">3</span>
+                    </div>
+                    <span class="text-xs">完成！</span>
+                </div>
+            </div>
+            <button onclick="onboardNext(2)" class="w-full max-w-xs bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold rounded-2xl py-3.5 text-sm transition-all shadow-lg shadow-indigo-200 active:scale-95">
+                开始创建 🚀
+            </button>
+        </div>
+
+        <!-- Step 2: Select Industry -->
+        <div id="onboard-step-2" class="hidden flex-1 flex flex-col px-6 fade-in">
+            <div class="text-center mb-6 pt-4">
+                <h2 class="text-xl font-bold text-slate-800 mb-1">选择你的行业</h2>
+                <p class="text-slate-400 text-sm">我们会为你预配置最合适的客服模板</p>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                <div id="onboard-industry-grid" class="grid grid-cols-2 gap-3 pb-4">
+                    <button onclick="onboardSelectIndustry('ecommerce')" class="onboard-industry-card flex flex-col items-center p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95" data-id="ecommerce">
+                        <span class="text-3xl mb-2">🛍️</span>
+                        <span class="text-sm font-medium text-slate-700">电商客服</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">商品咨询·订单·退换</span>
+                    </button>
+                    <button onclick="onboardSelectIndustry('restaurant')" class="onboard-industry-card flex flex-col items-center p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95" data-id="restaurant">
+                        <span class="text-3xl mb-2">🍽️</span>
+                        <span class="text-sm font-medium text-slate-700">餐饮客服</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">菜品推荐·预订·外卖</span>
+                    </button>
+                    <button onclick="onboardSelectIndustry('education')" class="onboard-industry-card flex flex-col items-center p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95" data-id="education">
+                        <span class="text-3xl mb-2">📚</span>
+                        <span class="text-sm font-medium text-slate-700">教育培训</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">课程咨询·报名·排课</span>
+                    </button>
+                    <button onclick="onboardSelectIndustry('medical')" class="onboard-industry-card flex flex-col items-center p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95" data-id="medical">
+                        <span class="text-3xl mb-2">🏥</span>
+                        <span class="text-sm font-medium text-slate-700">医疗咨询</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">健康科普·就医指引</span>
+                    </button>
+                    <button onclick="onboardSelectIndustry('legal')" class="onboard-industry-card flex flex-col items-center p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95" data-id="legal">
+                        <span class="text-3xl mb-2">⚖️</span>
+                        <span class="text-sm font-medium text-slate-700">法律咨询</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">法律普及·维权指引</span>
+                    </button>
+                    <button onclick="onboardSelectIndustry('realestate')" class="onboard-industry-card flex flex-col items-center p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95" data-id="realestate">
+                        <span class="text-3xl mb-2">🏠</span>
+                        <span class="text-sm font-medium text-slate-700">房产中介</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">房源推荐·看房预约</span>
+                    </button>
+                    <button onclick="onboardSelectIndustry('travel')" class="onboard-industry-card flex flex-col items-center p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95" data-id="travel">
+                        <span class="text-3xl mb-2">✈️</span>
+                        <span class="text-sm font-medium text-slate-700">旅游客服</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">线路推荐·预订服务</span>
+                    </button>
+                    <button onclick="onboardSelectIndustry('general')" class="onboard-industry-card flex flex-col items-center p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95" data-id="general">
+                        <span class="text-3xl mb-2">💬</span>
+                        <span class="text-sm font-medium text-slate-700">通用客服</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">多场景通用模板</span>
+                    </button>
+                </div>
+            </div>
+            <div class="pb-6 pt-2">
+                <button onclick="onboardNext(1)" class="w-full text-slate-400 text-sm py-2">← 返回</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Complete Info -->
+        <div id="onboard-step-3" class="hidden flex-1 flex flex-col px-6 fade-in">
+            <div class="text-center mb-6 pt-4">
+                <h2 class="text-xl font-bold text-slate-800 mb-1">完善你的客服信息</h2>
+                <p class="text-slate-400 text-sm">已经为你预填了行业模板，只需稍作修改</p>
+            </div>
+            <div class="flex-1 overflow-y-auto space-y-4">
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">员工名称</label>
+                    <input id="onboard-name" type="text" placeholder="给你的AI客服起个名字" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-400 transition-colors">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">店铺/公司名称</label>
+                    <input id="onboard-shop-name" type="text" placeholder="如：XX旗舰店" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-400 transition-colors">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">角色描述 <span class="text-slate-300">（已预填，可修改）</span></label>
+                    <textarea id="onboard-role" rows="3" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-400 transition-colors resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">欢迎语 <span class="text-slate-300">（已预填，可修改）</span></label>
+                    <input id="onboard-welcome" type="text" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-400 transition-colors">
+                </div>
+            </div>
+            <div class="pb-6 pt-4 space-y-2">
+                <button onclick="onboardCreateStaff()" id="onboard-create-btn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold rounded-2xl py-3.5 text-sm transition-all shadow-lg shadow-indigo-200 active:scale-95">
+                    ✨ 立即创建
+                </button>
+                <button onclick="onboardNext(2)" class="w-full text-slate-400 text-sm py-2">← 返回选择行业</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Done -->
+        <div id="onboard-step-4" class="hidden flex-1 flex flex-col items-center justify-center px-8 text-center fade-in">
+            <div class="w-28 h-28 bg-gradient-to-br from-green-400 to-emerald-500 rounded-3xl flex items-center justify-center mb-8 shadow-xl shadow-green-200 animate-bounce">
+                <svg class="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800 mb-3">恭喜！你的AI客服已上岗！🎉</h1>
+            <p class="text-slate-500 text-sm leading-relaxed mb-8">你的AI客服已经准备就绪，可以立即开始为客户服务</p>
+            <div class="w-full max-w-xs space-y-3">
+                <button onclick="onboardTestChat()" class="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-2xl py-3.5 text-sm transition-all shadow-lg shadow-green-200 active:scale-95">
+                    💬 测试对话
+                </button>
+                <button onclick="onboardAddMore()" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium rounded-2xl py-3 text-sm transition-all active:scale-95">
+                    ➕ 继续添加
+                </button>
+                <button onclick="onboardClose()" class="w-full text-slate-400 text-sm py-2">返回首页</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===== Bottom Tab Bar ===== -->
@@ -1051,6 +1233,12 @@
             updateSettingsUI();
             loadSettingsPage();
             navigateTo('home');
+            // Show onboarding if no staff after login
+            setTimeout(() => {
+                if (staffList.length === 0 && isLoggedIn()) {
+                    showOnboarding();
+                }
+            }, 500);
         } catch (e) {
             errorEl.textContent = e.message;
             errorEl.classList.remove('hidden');
@@ -1368,14 +1556,22 @@
     function renderStaffList() {
         const list = document.getElementById('staff-list');
         const empty = document.getElementById('empty-state');
+        const banner = document.getElementById('quick-start-banner');
 
         if (staffList.length === 0) {
             list.innerHTML = '';
             list.appendChild(empty);
             empty.classList.remove('hidden');
+            // Show onboarding wizard if logged in and no staff (first time)
+            if (isLoggedIn()) {
+                showOnboarding();
+            }
+            // Show quick start banner when logged in and has no staff (but not onboarding)
+            if (banner) banner.classList.remove('hidden');
             return;
         }
         empty.classList.add('hidden');
+        if (banner) banner.classList.add('hidden');
 
         let html = '';
         staffList.forEach(staff => {
@@ -1434,10 +1630,13 @@
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page-chat').classList.add('active');
 
-        // Send welcome message if set
+        // Send welcome message if set, or use default friendly welcome
         const welcome = staff.welcome_message || '';
         if (welcome) {
             addChatBubble('assistant', welcome);
+        } else {
+            const defaultWelcome = '你好！我是' + staff.name + '，你的AI客服助手。你可以问我任何关于产品/服务的问题，我会尽力帮你解答 😊';
+            addChatBubble('assistant', defaultWelcome);
         }
     }
 
@@ -2574,6 +2773,171 @@
                     }
                 } catch (e) { console.error(e); }
             }
+        }
+    }
+
+
+    // ===== Onboarding Wizard =====
+    let onboardSelectedIndustry = null;
+    let onboardCreatedStaffId = null;
+
+    function showOnboardingOrAddStaff() {
+        if (!isLoggedIn()) {
+            navigateTo('settings');
+            showToast('请先登录后再创建员工');
+            return;
+        }
+        // Show the onboarding wizard
+        showOnboarding();
+    }
+
+    function showOnboarding() {
+        onboardSelectedIndustry = null;
+        // Reset all steps
+        for (let i = 1; i <= 4; i++) {
+            const step = document.getElementById('onboard-step-' + i);
+            if (step) {
+                step.classList.add('hidden');
+                step.classList.remove('fade-in');
+            }
+        }
+        // Show step 1
+        document.getElementById('onboard-step-1').classList.remove('hidden');
+        updateOnboardDots(1);
+        // Reset industry selections
+        document.querySelectorAll('.onboard-industry-card').forEach(c => c.classList.remove('selected'));
+        // Clear inputs
+        document.getElementById('onboard-name').value = '';
+        document.getElementById('onboard-shop-name').value = '';
+        document.getElementById('onboard-role').value = '';
+        document.getElementById('onboard-welcome').value = '';
+        // Show overlay
+        document.getElementById('onboarding-overlay').classList.remove('hidden');
+    }
+
+    function hideOnboarding() {
+        document.getElementById('onboarding-overlay').classList.add('hidden');
+    }
+
+    function updateOnboardDots(step) {
+        for (let i = 1; i <= 4; i++) {
+            const dot = document.getElementById('onboard-dot-' + i);
+            if (dot) {
+                if (i <= step) {
+                    dot.classList.remove('bg-slate-200');
+                    dot.classList.add('bg-indigo-500');
+                } else {
+                    dot.classList.remove('bg-indigo-500');
+                    dot.classList.add('bg-slate-200');
+                }
+            }
+        }
+    }
+
+    function onboardNext(step) {
+        // Hide all steps
+        for (let i = 1; i <= 4; i++) {
+            const s = document.getElementById('onboard-step-' + i);
+            s.classList.add('hidden');
+            s.classList.remove('fade-in');
+        }
+        // Show target step
+        const target = document.getElementById('onboard-step-' + step);
+        target.classList.remove('hidden');
+        // Force reflow for animation
+        void target.offsetWidth;
+        target.classList.add('fade-in');
+        updateOnboardDots(step);
+    }
+
+    function onboardSelectIndustry(id) {
+        onboardSelectedIndustry = id;
+        const tpl = INDUSTRY_TEMPLATES[id];
+        if (!tpl) return;
+
+        // Highlight selected card
+        document.querySelectorAll('.onboard-industry-card').forEach(c => {
+            c.classList.remove('selected');
+            if (c.getAttribute('data-id') === id) c.classList.add('selected');
+        });
+
+        // Pre-fill step 3
+        document.getElementById('onboard-name').value = tpl.name;
+        document.getElementById('onboard-role').value = tpl.role;
+        document.getElementById('onboard-welcome').value = tpl.welcome;
+
+        // Auto advance after a brief delay
+        setTimeout(() => onboardNext(3), 300);
+    }
+
+    async function onboardCreateStaff() {
+        const name = document.getElementById('onboard-name').value.trim();
+        const role = document.getElementById('onboard-role').value.trim();
+        const welcome = document.getElementById('onboard-welcome').value.trim();
+        const shopName = document.getElementById('onboard-shop-name').value.trim();
+
+        if (!name) { showToast('请输入员工名称'); return; }
+        if (!role) { showToast('请输入角色描述'); return; }
+
+        const btn = document.getElementById('onboard-create-btn');
+        btn.disabled = true;
+        btn.textContent = '创建中...';
+
+        try {
+            const payload = {
+                name,
+                role_description: role,
+                platform: '通用',
+                welcome_message: welcome
+            };
+            const res = await authFetch(API_BASE + '/staff', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.detail || '创建失败'); }
+            const data = await res.json();
+            onboardCreatedStaffId = data.id;
+
+            // Refresh staff list
+            await loadStaffList();
+            onboardNext(4);
+        } catch (e) {
+            showToast(e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '✨ 立即创建';
+        }
+    }
+
+    function onboardTestChat() {
+        hideOnboarding();
+        if (onboardCreatedStaffId) {
+            openChat(onboardCreatedStaffId);
+        }
+    }
+
+    function onboardAddMore() {
+        hideOnboarding();
+        showAddStaffModal();
+    }
+
+    function onboardClose() {
+        hideOnboarding();
+        navigateTo('home');
+    }
+
+    // ===== Advanced Settings Toggle =====
+    function toggleAdvancedSettings() {
+        const content = document.getElementById('advanced-settings-content');
+        const arrow = document.getElementById('advanced-settings-arrow');
+        if (content.classList.contains('hidden')) {
+            if (!confirm('修改这些设置可能影响AI客服的正常使用，确定要修改吗？')) return;
+            content.classList.remove('hidden');
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            content.classList.add('hidden');
+            arrow.style.transform = 'rotate(0deg)';
         }
     }
 
