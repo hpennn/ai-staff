@@ -1643,7 +1643,7 @@
             sensitive_words: JSON.stringify(editSensitiveWords),
             auto_reply_rules: JSON.stringify(editAutoReplyRules),
             transfer_message: document.getElementById('edit-transfer-msg').value.trim(),
-            knowledge_base: document.getElementById('edit-kb').value
+            knowledge_base: document.getElementById('edit-kb').value,
             multilingual: document.getElementById('edit-multilingual').checked ? 1 : 0,
         };
 
@@ -2569,9 +2569,7 @@
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ staff_id: staffId, day_of_week: day, start_time: startTime, end_time: endTime, is_active: isActive })
                         });
-                    } else if (existing     // ===== Init =====
-    init();    // ===== Init =====
-    init(); existing.id) {
+                    } else if (existing && existing.id) {
                         await authFetch(API_BASE + "/schedules/" + existing.id, { method: "DELETE" });
                     }
                 } catch (e) { console.error(e); }
