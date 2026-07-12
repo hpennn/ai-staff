@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
 from models import ChatRequest, ChatResponse
 from agent_service import chat_with_ai, check_transfer_keywords, check_auto_reply, filter_sensitive_words
