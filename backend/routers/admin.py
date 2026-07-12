@@ -4,6 +4,8 @@ from typing import Optional
 from database import get_db
 from routers.auth import get_current_admin
 import json
+import secrets
+import string
 
 router = APIRouter()
 
@@ -76,7 +78,7 @@ async def update_password(req: PasswordUpdate, admin: dict = Depends(get_current
 # ---- Platform Config ----
 
 @router.get("/admin/platforms")
-async def get_platforms(admin: dict = Depends(get_current_admin)):
+async def get_platforms(request: Request, admin: dict = Depends(get_current_admin)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM platform_config WHERE admin_id = ? ORDER BY id", (admin["admin_id"],))
@@ -84,7 +86,7 @@ async def get_platforms(admin: dict = Depends(get_current_admin)):
     conn.close()
 
     # Ensure all platforms exist (for this admin)
-    all_platforms = ["微信", "淘宝", "拼多多", "京东", "抖音", "自定义"]
+    all_platforms = ["微信", "企业微信", "飞书", "钉钉", "淘宝", "拼多多", "京东", "抖音", "自定义"]
     existing = {c["platform"] for c in configs}
     
     for p in all_platforms:
@@ -103,6 +105,25 @@ async def get_platforms(admin: dict = Depends(get_current_admin)):
             c["config_json"] = json.loads(c["config_json"]) if isinstance(c["config_json"], str) else c["config_json"]
         except:
             c["config_json"] = {}
+
+    # Auto-generate webhook helper fields for IM platforms
+    slug_map = {
+        "微信": "wechat",
+        "企业微信": "wecom",
+        "飞书": "feishu",
+        "钉钉": "dingtalk"
+    }
+
+    # Get base URL from request
+    base_url = str(request.base_url).rstrip("/")
+
+    for c in configs:
+        slug = slug_map.get(c["platform"])
+        if slug:
+            cfg = c["config_json"]
+            c["webhook_url"] = f"{base_url}/api/webhook/{slug}"
+            c["auto_token"] = cfg.get("token") or secrets.token_hex(16)
+            c["auto_encoding_aes_key"] = cfg.get("encoding_aes_key") or ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(43))
 
     return configs
 

@@ -963,6 +963,35 @@
     </div>
 </div>
 
+
+<!-- Platform Wizard Modal -->
+<div id="modal-platform-wizard" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,0.5);">
+  <div class="bg-white w-full max-w-[480px] rounded-2xl shadow-2xl flex flex-col overflow-hidden" style="max-height:90vh;">
+    <!-- Header -->
+    <div class="px-6 pt-5 pb-3 border-b border-slate-100">
+      <div class="flex items-center justify-between mb-2">
+        <h3 id="wizard-title" class="text-base font-bold text-slate-800"></h3>
+        <button onclick="hideWizardModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="wizard-step-label" class="text-xs text-slate-400 whitespace-nowrap"></span>
+        <div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+          <div id="wizard-progress-bar" class="h-full bg-indigo-500 rounded-full transition-all duration-300" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Body -->
+    <div id="wizard-body" class="flex-1 overflow-y-auto px-6 py-5"></div>
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-slate-100 flex gap-3">
+      <button id="wizard-prev-btn" onclick="wizardPrev()" class="flex-1 border border-slate-200 text-slate-600 rounded-xl py-2.5 text-sm hover:bg-slate-50 transition-colors">上一步</button>
+      <button id="wizard-next-btn" onclick="wizardNext()" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl py-2.5 text-sm transition-colors">下一步</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="settings-toast" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-sm px-4 py-2 rounded-full shadow-lg z-[100] transition-all"></div>
 
@@ -1035,6 +1064,241 @@
             { key: "custom_field_2", label: "自定义字段2", type: "text" }
         ]
     };
+
+    // ===== Wizard Platform Fields =====
+    const WIZARD_PLATFORMS = ["微信", "企业微信", "飞书", "钉钉"];
+
+    const WIZARD_FIELDS = {
+        "微信": [
+            { key: "app_id", label: "AppID", type: "text", placeholder: "在公众平台后台获取" },
+            { key: "app_secret", label: "AppSecret", type: "password", placeholder: "在公众平台后台获取" }
+        ],
+        "企业微信": [
+            { key: "corp_id", label: "CorpID", type: "text", placeholder: "在企业微信管理后台获取" },
+            { key: "agent_id", label: "AgentId", type: "text", placeholder: "应用管理页面获取" },
+            { key: "secret", label: "Secret", type: "password", placeholder: "应用管理页面获取" }
+        ],
+        "飞书": [
+            { key: "app_id", label: "App ID", type: "text", placeholder: "在飞书开放平台获取" },
+            { key: "app_secret", label: "App Secret", type: "password", placeholder: "在飞书开放平台获取" }
+        ],
+        "钉钉": [
+            { key: "app_key", label: "AppKey", type: "text", placeholder: "在钉钉开放平台获取" },
+            { key: "app_secret", label: "AppSecret", type: "password", placeholder: "在钉钉开放平台获取" }
+        ]
+    };
+
+    const WIZARD_STEPS = {
+        "微信": [
+            { type: "login", icon: "🌐", title: "登录微信公众平台", desc: "前往微信公众平台并登录你的公众号管理后台", url: "https://mp.weixin.qq.com/", tip: "请使用管理员微信扫码或账号密码登录" },
+            { type: "auto", icon: "🔗", title: "配置服务器 URL", field: "webhook_url", desc: "将以下 URL 填入公众平台 → 开发 → 基本配置 → 服务器配置 的「URL」栏", tip: "直接复制粘贴即可，无需手动拼接" },
+            { type: "auto", icon: "🔑", title: "配置 Token", field: "auto_token", desc: "将以下 Token 填入「Token」栏（可随机生成，保持一致即可）", tip: "这个值可以自定义，系统已为你随机生成一个" },
+            { type: "auto", icon: "🛡️", title: "配置 EncodingAESKey", field: "auto_encoding_aes_key", desc: "将以下值填入「EncodingAESKey」栏", tip: "此值为43位随机字符串，用于消息加解密" },
+            { type: "toggle", icon: "✅", title: "启用消息加密模式", desc: "在服务器配置页面，将「消息加解密方式」选择为「安全模式（推荐）」", tip: "必须选安全模式才能使用 EncodingAESKey" },
+            { type: "input", icon: "📝", title: "填入 AppID 和 AppSecret", desc: "在基本配置页面获取 AppID 和 AppSecret，填入下方输入框", tip: "AppSecret 只显示一次，请妥善保存" }
+        ],
+        "企业微信": [
+            { type: "login", icon: "🌐", title: "登录企业微信管理后台", desc: "前往企业微信管理后台并登录", url: "https://work.weixin.qq.com/", tip: "请使用管理员账号登录" },
+            { type: "auto", icon: "🔗", title: "配置接收消息 URL", field: "webhook_url", desc: "将以下 URL 填入应用 → 「接收消息」的 URL 栏", tip: "此 URL 用于接收企业微信推送的消息" },
+            { type: "auto_group", icon: "🔑", title: "配置 Token 和 EncodingAESKey", fields: ["auto_token", "auto_encoding_aes_key"], labels: ["Token", "EncodingAESKey"], desc: "将以下两个值分别复制填入对应的配置栏", tip: "这两个值用于消息验证和加密" },
+            { type: "info", icon: "🌍", title: "设置可信 IP", desc: "在企业微信管理后台 → 应用管理 → 你的应用，将服务器 IP 添加到「企业可信IP」中", tip: "否则调用 API 时会被拒绝" },
+            { type: "input", icon: "📝", title: "填入 CorpID / AgentId / Secret", desc: "在管理后台获取以下信息并填入", tip: "CorpID 在「我的企业」页面，AgentId 和 Secret 在应用管理页面" }
+        ],
+        "飞书": [
+            { type: "login", icon: "🚀", title: "创建飞书应用", desc: "前往飞书开放平台，点击「创建企业自建应用」", url: "https://open.feishu.cn/app", tip: "填写应用名称和描述即可创建" },
+            { type: "info", icon: "🤖", title: "添加机器人能力", desc: "进入应用 → 「添加应用能力」→ 勾选「机器人」，然后保存", tip: "只有启用机器人能力才能接收消息" },
+            { type: "auto", icon: "🔗", title: "配置事件订阅 URL", field: "webhook_url", desc: "进入「事件订阅」页面，将以下 URL 填入「请求地址」栏", tip: "飞书会发送验证请求，确保后端服务已启动" },
+            { type: "input", icon: "📝", title: "填入 App ID 和 App Secret", desc: "在「凭证与基础信息」页面获取并填入下方", tip: "App Secret 请妥善保管" }
+        ],
+        "钉钉": [
+            { type: "login", icon: "🚀", title: "创建钉钉应用", desc: "前往钉钉开放平台，创建一个「企业内部应用」", url: "https://open-dev.dingtalk.com/", tip: "选择「H5微应用」或「机器人」类型均可" },
+            { type: "info", icon: "🤖", title: "添加机器人能力", desc: "在应用管理页面 → 「应用能力」→ 开启「机器人」", tip: "开启后才能在群里接收消息" },
+            { type: "auto", icon: "🔗", title: "配置消息接收地址", field: "webhook_url", desc: "在机器人配置页面，将以下 URL 填入「消息接收地址」", tip: "确保后端服务已部署且可访问" },
+            { type: "input", icon: "📝", title: "填入 AppKey 和 AppSecret", desc: "在「凭证与基础信息」页面获取并填入", tip: "凭证信息请妥善保管" }
+        ]
+    };
+
+    // ===== Wizard State =====
+    let wizardPlatform = '';
+    let wizardStep = 0;
+    let wizardConfigData = {};
+
+    function openWizardModal(platform) {
+        wizardPlatform = platform;
+        wizardStep = 0;
+        const config = platformConfigs.find(p => p.platform === platform);
+        wizardConfigData = config ? { ...(config.config_json || {}) } : {};
+        // Store auto values from server response
+        if (config) {
+            if (config.webhook_url) wizardConfigData._webhook_url = config.webhook_url;
+            if (config.auto_token) wizardConfigData._auto_token = config.auto_token;
+            if (config.auto_encoding_aes_key) wizardConfigData._auto_encoding_aes_key = config.auto_encoding_aes_key;
+        }
+        document.getElementById('wizard-title').textContent = platform + ' 接入向导';
+        document.getElementById('modal-platform-wizard').classList.remove('hidden');
+        renderWizardStep();
+    }
+
+    function hideWizardModal() {
+        document.getElementById('modal-platform-wizard').classList.add('hidden');
+    }
+
+    function renderWizardStep() {
+        const steps = WIZARD_STEPS[wizardPlatform];
+        const total = steps.length;
+        const step = steps[wizardStep];
+        const stepNum = wizardStep + 1;
+
+        document.getElementById('wizard-step-label').textContent = '步骤 ' + stepNum + '/' + total;
+        document.getElementById('wizard-progress-bar').style.width = (stepNum / total * 100) + '%';
+
+        // Prev button
+        document.getElementById('wizard-prev-btn').style.visibility = wizardStep === 0 ? 'hidden' : 'visible';
+        // Next button text
+        const isLast = wizardStep === total - 1;
+        document.getElementById('wizard-next-btn').textContent = isLast ? '完成接入' : '下一步';
+
+        let html = '';
+        // Icon + Title
+        html += '<div class="text-center mb-4">';
+        html += '<div class="text-4xl mb-2">' + step.icon + '</div>';
+        html += '<h4 class="text-sm font-bold text-slate-800">' + step.title + '</h4>';
+        html += '</div>';
+        // Description
+        html += '<p class="text-xs text-slate-500 text-center mb-4">' + step.desc + '</p>';
+
+        if (step.type === 'login') {
+            html += '<a href="' + step.url + '" target="_blank" class="block w-full text-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium rounded-xl py-3 text-sm transition-colors mb-3">🔗 点击前往 →</a>';
+        } else if (step.type === 'auto') {
+            const val = getWizardAutoValue(step.field);
+            html += buildAutoField(step.field, step.field === 'webhook_url' ? '服务器 URL' : (step.field === 'auto_token' ? 'Token' : 'EncodingAESKey'), val);
+        } else if (step.type === 'auto_group') {
+            step.fields.forEach((f, i) => {
+                const val = getWizardAutoValue(f);
+                const label = step.labels[i];
+                html += buildAutoField(f, label, val);
+            });
+        } else if (step.type === 'toggle') {
+            html += '<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">';
+            html += '<p class="text-sm text-amber-800 font-medium">请选择「安全模式」</p>';
+            html += '<p class="text-xs text-amber-600 mt-1">在公众平台后台操作，无需在此填入任何值</p>';
+            html += '</div>';
+        } else if (step.type === 'input') {
+            const fields = WIZARD_FIELDS[wizardPlatform] || [];
+            fields.forEach(f => {
+                const val = wizardConfigData[f.key] || '';
+                html += '<div class="mb-3">';
+                html += '<label class="text-xs font-medium text-slate-500 mb-1 block">' + f.label + '</label>';
+                html += '<input type="' + f.type + '" data-wizard-field="' + f.key + '" value="' + escapeHtml(val) + '" placeholder="' + (f.placeholder || '请输入' + f.label) + '" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors outline-none">';
+                html += '</div>';
+            });
+        } else if (step.type === 'info') {
+            html += '<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">';
+            html += '<p class="text-sm text-blue-800">请按说明在后台完成配置</p>';
+            html += '<p class="text-xs text-blue-600 mt-1">完成后点击下方按钮继续</p>';
+            html += '</div>';
+        }
+
+        // Tip box
+        if (step.tip) {
+            html += '<div class="mt-4 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5">';
+            html += '<p class="text-xs text-amber-700">💡 ' + step.tip + '</p>';
+            html += '</div>';
+        }
+
+        document.getElementById('wizard-body').innerHTML = html;
+    }
+
+    function getWizardAutoValue(field) {
+        if (field === 'webhook_url') return wizardConfigData._webhook_url || '';
+        if (field === 'auto_token') return wizardConfigData._auto_token || '';
+        if (field === 'auto_encoding_aes_key') return wizardConfigData._auto_encoding_aes_key || '';
+        return '';
+    }
+
+    function buildAutoField(field, label, val) {
+        const safeVal = escapeHtml(val);
+        let h = '<div class="mb-3">';
+        h += '<label class="text-xs font-medium text-slate-500 mb-1 block">' + label + '</label>';
+        h += '<div class="flex items-center gap-2">';
+        h += '<input type="text" readonly value="' + safeVal + '" id="wizard-auto-' + field + '" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 font-mono select-all cursor-text">';
+        h += '<button onclick="wizardCopy(this.dataset.f)" data-f="' + field + '" class="shrink-0 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-medium px-3 py-2 rounded-xl transition-colors whitespace-nowrap" id="wizard-copy-btn-' + field + '">复制</button>';
+        h += '</div></div>';
+        return h;
+    }
+
+    function wizardCopy(field) {
+        const el = document.getElementById('wizard-auto-' + field);
+        if (!el) return;
+        const val = el.value;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(val).then(() => {
+                const btn = document.getElementById('wizard-copy-btn-' + field);
+                if (btn) { btn.textContent = '✓ 已复制'; setTimeout(() => { btn.textContent = '复制'; }, 1500); }
+            });
+        } else {
+            el.select();
+            document.execCommand('copy');
+            const btn = document.getElementById('wizard-copy-btn-' + field);
+            if (btn) { btn.textContent = '✓ 已复制'; setTimeout(() => { btn.textContent = '复制'; }, 1500); }
+        }
+    }
+
+    function wizardPrev() {
+        if (wizardStep > 0) {
+            // Save input fields before going back
+            saveWizardInputs();
+            wizardStep--;
+            renderWizardStep();
+        }
+    }
+
+    function wizardNext() {
+        const steps = WIZARD_STEPS[wizardPlatform];
+        if (wizardStep < steps.length - 1) {
+            saveWizardInputs();
+            wizardStep++;
+            renderWizardStep();
+        } else {
+            // Last step: save and finish
+            saveWizardInputs();
+            saveWizardConfig();
+        }
+    }
+
+    function saveWizardInputs() {
+        document.querySelectorAll('[data-wizard-field]').forEach(el => {
+            wizardConfigData[el.getAttribute('data-wizard-field')] = el.value.trim();
+        });
+        // Save auto values into config for persistence
+        if (wizardConfigData._auto_token) wizardConfigData.token = wizardConfigData._auto_token;
+        if (wizardConfigData._auto_encoding_aes_key) wizardConfigData.encoding_aes_key = wizardConfigData._auto_encoding_aes_key;
+    }
+
+    async function saveWizardConfig() {
+        // Remove internal keys before saving
+        const toSave = {};
+        Object.keys(wizardConfigData).forEach(k => {
+            if (!k.startsWith('_')) toSave[k] = wizardConfigData[k];
+        });
+
+        const hasValues = Object.values(toSave).some(v => v);
+        const status = hasValues ? '已接入' : '未配置';
+
+        try {
+            await authFetch(API_BASE + '/admin/platforms/' + wizardPlatform, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ config_json: toSave, status })
+            });
+            showToast('🎉 ' + wizardPlatform + ' 配置已保存');
+            hideWizardModal();
+            loadPlatforms();
+        } catch (e) {
+            alert('保存失败: ' + e.message);
+        }
+    }
+
 
     // ===== Auth =====
     async function authFetch(url, options = {}) {
@@ -1298,7 +1562,8 @@
     function renderPlatformCards() {
         const container = document.getElementById('platform-config-list');
         const platformIcons = {
-            "微信": "💬", "淘宝": "🛒", "拼多多": "🏷️",
+            "微信": "💬", "企业微信": "💼", "飞书": "🐦", "钉钉": "📌",
+            "淘宝": "🛒", "拼多多": "🏷️",
             "京东": "📦", "抖音": "🎵", "自定义": "⚙️"
         };
         let html = '';
@@ -1323,6 +1588,11 @@
     }
 
     function openPlatformConfig(platform) {
+        // Route to wizard for IM platforms
+        if (WIZARD_PLATFORMS.includes(platform)) {
+            openWizardModal(platform);
+            return;
+        }
         currentEditPlatform = platform;
         const config = platformConfigs.find(p => p.platform === platform);
         const fields = PLATFORM_FIELDS[platform] || [];
