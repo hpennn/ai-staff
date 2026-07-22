@@ -1,4 +1,4 @@
-from ..llm_client import vision_completion
+from skills.llm_client import vision_completion
 from .controller import controller
 import json
 
