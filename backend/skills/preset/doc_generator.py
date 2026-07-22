@@ -1,40 +1,57 @@
-"""
-文档生成技能 - 桩实现
-支持 Word/PDF/Markdown 自动生成
-"""
-import asyncio
-from typing import Dict, Any
+"""文档生成技能 - 接入LLM生成真实内容"""
+import json
+import os
+import time
+from ..llm_client import chat_completion
 
+SKILL_META = {
+    "id": "doc_generator",
+    "name": "文档生成",
+    "icon": "📄",
+    "description": "Word/PDF/Markdown自动生成",
+    "keywords": ["文档", "word", "pdf", "markdown", "报告", "合同"],
+    "input_type": "text+file",
+    "output_type": "file+text",
+}
 
 async def execute(input_data: dict) -> dict:
     """
-    执行文档生成
-    
-    Args:
-        input_data: 包含以下字段
-            - text: 文档描述/内容需求
-            - format: 输出格式 (word/pdf/markdown)
-            - template: 模板名称 (可选)
-    
-    Returns:
-        包含生成结果信息的字典
+    输入: {"prompt": "要生成什么文档", "format": "md/docx/pdf", "style": "正式/简洁"}
+    输出: {"content": "文档内容", "file_url": "下载链接", "format": "md"}
     """
-    # 模拟处理延迟
-    await asyncio.sleep(0.5)
+    prompt = input_data.get("prompt", "")
+    fmt = input_data.get("format", "md")
+    style = input_data.get("style", "正式")
     
-    text = input_data.get("text", "")
-    fmt = input_data.get("format", "word")
+    if not prompt:
+        return {"error": "请描述要生成什么文档"}
+    
+    # LLM生成文档内容
+    system_msg = f"你是一个专业的文档撰写助手。请用{style}的风格撰写文档。如果用户要求特定格式，请按要求输出。"
+    user_msg = f"请根据以下需求撰写文档：\n\n{prompt}\n\n请用Markdown格式输出完整文档内容。"
+    
+    content = await chat_completion([
+        {"role": "system", "content": system_msg},
+        {"role": "user", "content": user_msg}
+    ], max_tokens=4000)
+    
+    # 保存文件
+    filename = f"doc_{int(time.time())}.{fmt}"
+    filepath = os.path.join(os.path.dirname(__file__), "../../static/downloads", filename)
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+    if fmt == "md":
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+    elif fmt in ("docx", "pdf"):
+        # 先保存md，后续可转换为docx/pdf
+        with open(filepath.replace(f".{fmt}", ".md"), "w", encoding="utf-8") as f:
+            f.write(content)
+        filepath = filepath.replace(f".{fmt}", ".md")
     
     return {
-        "status": "success",
-        "message": f"文档已生成 ({fmt.upper()} 格式)",
-        "output_type": "file",
-        "data": {
-            "filename": f"generated_document.{fmt}",
-            "format": fmt,
-            "word_count": len(text) * 3 if text else 500,
-            "pages": max(1, len(text) // 200) if text else 3,
-            "content_preview": text[:100] + "..." if len(text) > 100 else text or "自动生成的文档内容",
-        },
-        "download_url": f"/api/files/generated_document.{fmt}",
+        "content": content,
+        "file_url": f"/static/downloads/{os.path.basename(filepath)}",
+        "format": fmt,
+        "word_count": len(content)
     }
