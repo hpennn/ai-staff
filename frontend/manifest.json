@@ -1,7 +1,7 @@
 {
-  "name": "AI智能客服",
-  "short_name": "AI客服",
-  "description": "轻量级对话式AI客服系统，一键部署，智能应答",
+  "name": "智能体工作台",
+  "short_name": "智能体工作台",
+  "description": "智能体框架 - 预置办公技能 + 可扩展技能槽",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
