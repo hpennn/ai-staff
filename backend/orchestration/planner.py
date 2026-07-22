@@ -1,6 +1,6 @@
 """智能规划器 - LLM拆解任务为多步骤工作流"""
 import json
-from ..llm_client import chat_completion
+from ..skills.llm_client import chat_completion
 from .workflow import WorkflowStep
 
 async def plan_task(task_description: str) -> list:
