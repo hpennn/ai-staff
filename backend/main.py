@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
-from routers import chat, staff, webhook, auth, admin, subscription, upload, broadcast, schedule, skills, knowledge, workflow, computer_ctrl
+from routers import chat, staff, webhook, auth, admin, subscription, upload, broadcast, schedule, skills, knowledge, workflow, computer_ctrl, agent_chat
 
 # Initialize database
 init_db()
@@ -54,6 +54,8 @@ app.include_router(knowledge.router, prefix="/api")
 app.include_router(workflow.router, prefix="/api")
 # Computer control
 app.include_router(computer_ctrl.router, prefix="/api")
+# Agent chat (frontend agents)
+app.include_router(agent_chat.router, prefix="/api")
 
 
 
