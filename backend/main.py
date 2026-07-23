@@ -14,13 +14,17 @@ from routers import chat, staff, webhook, auth, admin, subscription, upload, bro
 # Initialize database
 init_db()
 
+# Initialize credits database
+from credits_database import init_credits_db
+init_credits_db()
+
 # Load skills engine
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from skills.registry import registry
 registry.load_preset_skills()
 
-app = FastAPI(title="智能体工作台", version="2.1.0")
+app = FastAPI(title="智能体工作台", version="2.2.0")
 
 # CORS
 app.add_middleware(
@@ -56,6 +60,9 @@ app.include_router(workflow.router, prefix="/api")
 app.include_router(computer_ctrl.router, prefix="/api")
 # Agent chat (frontend agents)
 app.include_router(agent_chat.router, prefix="/api")
+# Credits system
+from routers.credits import router as credits_router
+app.include_router(credits_router, prefix="/api")
 
 
 
@@ -95,7 +102,8 @@ input:focus, textarea:focus {{ outline: none; box-shadow: 0 0 0 2px rgba(99,102,
 <body class="bg-slate-50 h-screen overflow-hidden">
 <div class="h-full flex flex-col max-w-lg mx-auto bg-white relative">
     <div class="flex items-center px-3 py-3 bg-white border-b border-slate-100 shadow-sm">
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white mr-2" style="background:{staff_dict.get('avatar_color','#6366f1')}">{staff_dict['name'][0]}</div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white mr-2" style="background:{staff_dict.get('avatar_color','#6366f1')}">
+{staff_dict['name'][0]}</div>
         <div class="flex-1">
             <h2 class="font-semibold text-slate-800 text-sm">{staff_dict['name']}</h2>
             <p class="text-xs text-slate-400 truncate">{staff_dict.get('role_description','')}</p>
@@ -263,7 +271,7 @@ async def serve_icon(filename: str):
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "message": "智能体工作台运行中", "version": "2.1.0"}
+    return {"status": "ok", "message": "智能体工作台运行中", "version": "2.2.0"}
 
 
 if __name__ == "__main__":

@@ -1,11 +1,17 @@
-"""智能体对话API - 前端智能体直接调用LLM，支持图片上传"""
+"""智能体对话API - 前端智能体直接调用LLM，支持图片上传，含积分检查"""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 import json
 import uuid
 
+from credits_database import register_user, get_user_credits, deduct_credits
+
 router = APIRouter()
+
+# 积分消耗配置
+CREDIT_COST_TEXT = 30    # 纯文字对话
+CREDIT_COST_IMAGE = 50   # 含图片对话
 
 
 class AgentChatRequest(BaseModel):
@@ -14,20 +20,42 @@ class AgentChatRequest(BaseModel):
     messages: List[dict] = []
     session_id: Optional[str] = ""
     images: Optional[List[str]] = []  # base64 data URLs
+    user_id: Optional[str] = ""  # 设备ID，用于积分检查
 
 
 class AgentChatResponse(BaseModel):
     reply: str
     session_id: str
+    remaining_credits: int = -1
 
 
 @router.post("/agent-chat", response_model=AgentChatResponse)
 async def agent_chat(request: AgentChatRequest):
-    """智能体对话接口，支持多模态（图片+文字）"""
+    """智能体对话接口，支持多模态（图片+文字），含积分检查"""
     from skills.llm_client import chat_completion, vision_completion, LLM_VL_MODEL
     import httpx, os
 
     has_images = bool(request.images)
+
+    # ===== 积分检查 =====
+    remaining_credits = -1
+    if request.user_id:
+        # 确保用户已注册
+        register_user(request.user_id)
+
+        # 确定消耗积分数
+        cost = CREDIT_COST_IMAGE if has_images else CREDIT_COST_TEXT
+        credits = get_user_credits(request.user_id)
+
+        if credits < cost:
+            raise HTTPException(
+                status_code=402,
+                detail={
+                    "message": "积分不足，请充值后继续使用",
+                    "required": cost,
+                    "remaining": credits,
+                }
+            )
 
     # Build system prompt
     system_prompt = f"你是一个专业的AI智能助手。\n\n你的角色定位：{request.role}"
@@ -99,4 +127,11 @@ async def agent_chat(request: AgentChatRequest):
 
     session_id = request.session_id or str(uuid.uuid4())[:12]
 
-    return AgentChatResponse(reply=reply, session_id=session_id)
+    # ===== 对话成功后扣积分 =====
+    if request.user_id:
+        cost = CREDIT_COST_IMAGE if has_images else CREDIT_COST_TEXT
+        cost_desc = "智能体对话(含图片)" if has_images else "智能体对话(文字)"
+        deduct_credits(request.user_id, cost, cost_desc)
+        remaining_credits = get_user_credits(request.user_id)
+
+    return AgentChatResponse(reply=reply, session_id=session_id, remaining_credits=remaining_credits)

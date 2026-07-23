@@ -196,7 +196,30 @@
                 <div class="w-16 h-16 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200/50">U</div>
                 <div>
                     <p class="font-bold text-slate-800 text-lg">用户</p>
-                    <p class="text-xs text-slate-400 mt-0.5">免费版 · 已使用 <span id="usage-count">0</span> 次</p>
+                    <p class="text-xs text-slate-400 mt-0.5">积分制 · 已使用 <span id="usage-count">0</span> 次</p>
+                </div>
+            </div>
+            <!-- Credits Card -->
+            <div class="mx-4 mb-4 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-5 text-white shadow-lg shadow-indigo-200/50">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium opacity-90">我的积分</span>
+                    <button onclick="openCreditsModal()" class="text-xs bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-1 rounded-full transition-all">充值</button>
+                </div>
+                <p id="credits-balance" class="text-3xl font-bold">--</p>
+                <div class="flex items-center gap-4 mt-3 text-xs opacity-80">
+                    <span>对话(文字): 30积分/次</span>
+                    <span>对话(图片): 50积分/次</span>
+                    <span>技能: 20积分/次</span>
+                </div>
+            </div>
+            <!-- Recent Credit Logs -->
+            <div class="mx-4 mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-semibold text-slate-700">积分记录</h3>
+                    <button onclick="refreshCredits()" class="text-xs text-indigo-500 hover:text-indigo-600">刷新</button>
+                </div>
+                <div id="credit-logs" class="space-y-2">
+                    <p class="text-xs text-slate-400 text-center py-4">加载中...</p>
                 </div>
             </div>
             <div class="px-4 space-y-1 pb-4">
@@ -277,6 +300,31 @@
         </div>
     </div>
 
+
+    <!-- Credits Recharge Modal -->
+    <div id="credits-modal" class="modal-overlay" onclick="if(event.target===this)closeCreditsModal()">
+        <div class="modal-content p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-bold text-slate-800 text-lg">购买积分</h2>
+                <button onclick="closeCreditsModal()" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">✕</button>
+            </div>
+            <div id="credits-packages" class="space-y-3"></div>
+            <p class="text-xs text-slate-400 mt-4 text-center">1元 = 3000积分 · 支付成功后积分即时到账</p>
+        </div>
+    </div>
+
+    <!-- Insufficient Credits Modal -->
+    <div id="insufficient-modal" class="modal-overlay" onclick="if(event.target===this)closeInsufficientModal()">
+        <div class="modal-content p-6 text-center">
+            <div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <h3 class="font-bold text-slate-800 text-lg mb-2">积分不足</h3>
+            <p id="insufficient-msg" class="text-sm text-slate-500 mb-5">继续使用需要更多积分</p>
+            <button onclick="closeInsufficientModal();openCreditsModal()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium rounded-xl py-3 text-sm shadow-lg shadow-indigo-200/50">去充值</button>
+            <button onclick="closeInsufficientModal()" class="w-full mt-2 text-sm text-slate-400 py-2">稍后再说</button>
+        </div>
+    </div>
     <!-- Bottom Navigation -->
     <div class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100/80 flex items-center justify-around py-1.5 safe-bottom z-30">
         <button onclick="navigateTo('home')" class="tab-btn active flex flex-col items-center gap-0.5 px-5 py-1.5 rounded-xl" data-tab="home">
@@ -347,6 +395,141 @@ let isSending = false;
 let pendingImages = []; // { dataUrl, name }
 
 // ===== 初始化 =====
+// ===== 设备ID（用户身份）=====
+function getDeviceId() {
+    let id = localStorage.getItem('ai_device_id');
+    if (!id) {
+        id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('ai_device_id', id);
+    }
+    return id;
+}
+const DEVICE_ID = getDeviceId();
+
+// ===== 积分相关 =====
+let currentCredits = -1;
+
+async function fetchCredits() {
+    try {
+        const resp = await fetch(API_BASE + '/credits/' + DEVICE_ID);
+        const data = await resp.json();
+        currentCredits = data.credits;
+        document.getElementById('credits-balance').textContent = data.credits.toLocaleString();
+        // Update nav badge
+        const badge = document.getElementById('nav-credits-badge');
+        if (badge) {
+            const display = data.credits < 100 ? data.credits.toString() : (data.credits >= 10000 ? (data.credits/10000).toFixed(1) + 'w' : data.credits.toLocaleString());
+            badge.textContent = display;
+            badge.style.display = '';
+        }
+        // Render credit logs
+        renderCreditLogs(data.recent_logs || []);
+        return data;
+    } catch (e) {
+        document.getElementById('credits-balance').textContent = '--';
+        return null;
+    }
+}
+
+function renderCreditLogs(logs) {
+    const container = document.getElementById('credit-logs');
+    if (!logs || !logs.length) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">暂无记录</p>';
+        return;
+    }
+    container.innerHTML = logs.slice(0, 10).map(log => {
+        const isPositive = log.amount > 0;
+        const typeLabel = {gift: '赠送', recharge: '充值', consume: '消耗'}[log.type] || log.type;
+        const typeColor = isPositive ? 'text-emerald-600' : 'text-slate-600';
+        const amountColor = isPositive ? 'text-emerald-600' : 'text-red-500';
+        const amountPrefix = isPositive ? '+' : '';
+        const time = log.created_at ? new Date(log.created_at).toLocaleString('zh-CN', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+        return '<div class="flex items-center justify-between py-2 border-b border-slate-50">' +
+            '<div class="flex-1 min-w-0"><p class="text-xs text-slate-700 truncate">' + escapeHtml(log.description || typeLabel) + '</p><p class="text-[10px] text-slate-400">' + time + '</p></div>' +
+            '<span class="text-sm font-semibold ' + amountColor + ' ml-3">' + amountPrefix + log.amount + '</span></div>';
+    }).join('');
+}
+
+function refreshCredits() {
+    fetchCredits();
+    showToast('积分已刷新');
+}
+
+// Credits packages
+const CREDIT_PACKAGES = {
+    starter: { price: 9.9, credits: 30000, label: '体验包', desc: '30,000 积分' },
+    basic: { price: 29, credits: 90000, label: '基础包', desc: '90,000 积分' },
+    pro: { price: 99, credits: 300000, label: '进阶包', desc: '300,000 积分' },
+    ultimate: { price: 299, credits: 900000, label: '旗舰包', desc: '900,000 积分' },
+};
+
+function openCreditsModal() {
+    const container = document.getElementById('credits-packages');
+    container.innerHTML = Object.entries(CREDIT_PACKAGES).map(([key, pkg]) => {
+        const popular = key === 'pro';
+        return '<div onclick="purchasePackage(\''+key+'\')" class="flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ' + (popular ? 'border-indigo-400 bg-indigo-50/30' : 'border-slate-100 hover:border-indigo-200') + '">' +
+            '<div><div class="flex items-center gap-2"><span class="font-semibold text-slate-800 text-sm">' + pkg.label + '</span>' + (popular ? '<span class="text-[10px] bg-indigo-500 text-white px-1.5 py-0.5 rounded-full">推荐</span>' : '') + '</div><p class="text-xs text-slate-400 mt-0.5">' + pkg.desc + '</p></div>' +
+            '<span class="text-lg font-bold text-indigo-600">¥' + pkg.price + '</span></div>';
+    }).join('');
+    document.getElementById('credits-modal').classList.add('active');
+}
+
+function closeCreditsModal() {
+    document.getElementById('credits-modal').classList.remove('active');
+}
+
+async function purchasePackage(packageKey) {
+    try {
+        const resp = await fetch(API_BASE + '/credits/recharge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: DEVICE_ID, package: packageKey })
+        });
+        const data = await resp.json();
+        if (data.pay_url) {
+            // Open payment URL in new window
+            window.open(data.pay_url, '_blank');
+            closeCreditsModal();
+            showToast('已跳转支付页面，支付成功后积分将自动到账');
+            // Start polling for payment status
+            pollPaymentStatus(data.order_id);
+        } else {
+            showToast('创建订单失败，请重试');
+        }
+    } catch (e) {
+        showToast('支付请求失败');
+    }
+}
+
+async function pollPaymentStatus(orderId) {
+    let attempts = 0;
+    const poll = async () => {
+        if (attempts >= 60) return; // max 5 min
+        attempts++;
+        try {
+            const resp = await fetch(API_BASE + '/credits/check/' + orderId);
+            const data = await resp.json();
+            if (data.status === 'paid') {
+                showToast('充值成功！积分已到账');
+                fetchCredits();
+                return;
+            }
+        } catch (e) {}
+        setTimeout(poll, 5000);
+    };
+    setTimeout(poll, 5000);
+}
+
+function showInsufficientCredits(required, remaining) {
+    document.getElementById('insufficient-msg').textContent =
+        '当前积分 ' + (remaining || 0) + '，需要 ' + (required || 30) + ' 积分';
+    document.getElementById('insufficient-modal').classList.add('active');
+}
+
+function closeInsufficientModal() {
+    document.getElementById('insufficient-modal').classList.remove('active');
+}
+
 function init() {
     renderSkillsGrid();
     renderCustomSlots();
@@ -354,6 +537,7 @@ function init() {
     renderAgentsGrid();
     loadSkillHistory();
     updateUsageCount();
+    fetchCredits(); // Load credits on init
 }
 
 function getAllAgents() { return [...DEFAULT_AGENTS, ...customAgents]; }
@@ -572,11 +756,35 @@ async function sendAgentMessage() {
                 custom_prompt: agent.customPrompt || '',
                 messages: history,
                 session_id: currentAgentId + '_' + Date.now(),
-                images: imageUrls
+                images: imageUrls,
+                user_id: DEVICE_ID
             })
         });
-        const data = await resp.json();
-        agentChats[currentAgentId].push({ role: 'assistant', content: data.reply || '回复为空', time: Date.now() });
+        if (resp.status === 402) {
+            const errData = await resp.json();
+            const detail = errData.detail || {};
+            showInsufficientCredits(detail.required || 30, detail.remaining || 0);
+            agentChats[currentAgentId].pop(); // Remove the user message we just added
+            saveAgentChats();
+            renderAgentMessages(agent);
+        } else {
+            const data = await resp.json();
+            agentChats[currentAgentId].push({ role: 'assistant', content: data.reply || '回复为空', time: Date.now() });
+            // Update credits from response
+            if (data.remaining_credits >= 0) {
+                currentCredits = data.remaining_credits;
+                document.getElementById('credits-balance').textContent = data.remaining_credits.toLocaleString();
+                const badge = document.getElementById('nav-credits-badge');
+                if (badge) {
+                    const display = data.remaining_credits < 100 ? data.remaining_credits.toString() : (data.remaining_credits >= 10000 ? (data.remaining_credits/10000).toFixed(1) + 'w' : data.remaining_credits.toLocaleString());
+                    badge.textContent = display;
+                }
+                // Show low credits warning
+                if (data.remaining_credits < 30 && data.remaining_credits > 0) {
+                    showToast('积分余额不足，请及时充值');
+                }
+            }
+        }
     } catch (e) {
         agentChats[currentAgentId].push({ role: 'assistant', content: '抱歉，网络异常，请稍后重试。', time: Date.now() });
     }
@@ -679,11 +887,26 @@ async function executeSkill() {
         const resp = await fetch(API_BASE + '/skills/' + skill.id + '/execute', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: inputText || skill.desc })
+            body: JSON.stringify({ text: inputText || skill.desc, user_id: DEVICE_ID })
         });
-        const data = await resp.json();
-        document.getElementById('detail-result-area').classList.remove('hidden');
-        document.getElementById('detail-result').innerHTML = formatSkillResult(data);
+        if (resp.status === 402) {
+            const errData = await resp.json();
+            const detail = errData.detail || {};
+            showInsufficientCredits(detail.required || 20, detail.remaining || 0);
+        } else {
+            const data = await resp.json();
+            document.getElementById('detail-result-area').classList.remove('hidden');
+            document.getElementById('detail-result').innerHTML = formatSkillResult(data);
+            // Update credits from response
+            if (data.remaining_credits >= 0) {
+                currentCredits = data.remaining_credits;
+                const badge = document.getElementById('nav-credits-badge');
+                if (badge) {
+                    const display = data.remaining_credits < 100 ? data.remaining_credits.toString() : (data.remaining_credits >= 10000 ? (data.remaining_credits/10000).toFixed(1) + 'w' : data.remaining_credits.toLocaleString());
+                    badge.textContent = display;
+                }
+            }
+        }
     } catch (e) {
         document.getElementById('detail-result-area').classList.remove('hidden');
         document.getElementById('detail-result').innerHTML = '<p class="text-red-500 text-sm">执行失败，请稍后重试</p>';
@@ -752,6 +975,7 @@ function navigateTo(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     if (tab === 'tasks') renderTaskList();
     if (tab === 'agents') renderAgentsGrid();
+    if (tab === 'profile') fetchCredits();
 }
 function addCustomSlot(i) { showToast('自定义技能功能即将上线'); }
 function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
