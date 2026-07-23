@@ -10,3 +10,5 @@ python-multipart
 pyautogui
 aiosqlite
 requests
+aliyun-python-sdk-core
+aliyun-python-sdk-dysmsapi

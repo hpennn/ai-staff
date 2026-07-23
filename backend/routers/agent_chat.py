@@ -1,5 +1,5 @@
 """智能体对话API - 前端智能体直接调用LLM，支持图片上传，含积分检查"""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Optional
 import json
@@ -30,22 +30,33 @@ class AgentChatResponse(BaseModel):
 
 
 @router.post("/agent-chat", response_model=AgentChatResponse)
-async def agent_chat(request: AgentChatRequest):
+async def agent_chat(request: AgentChatRequest, fastapi_request: Request = None):
     """智能体对话接口，支持多模态（图片+文字），含积分检查"""
     from skills.llm_client import chat_completion, vision_completion, LLM_VL_MODEL
     import httpx, os
+
+    # 优先使用Token认证获取user_id
+    effective_user_id = request.user_id
+    if fastapi_request:
+        auth_header = fastapi_request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+            from auth_database import verify_token
+            user_info = verify_token(token)
+            if user_info:
+                effective_user_id = f"user_{user_info['user_id']}"
 
     has_images = bool(request.images)
 
     # ===== 积分检查 =====
     remaining_credits = -1
-    if request.user_id:
+    if effective_user_id:
         # 确保用户已注册
-        register_user(request.user_id)
+        register_user(effective_user_id)
 
         # 确定消耗积分数
         cost = CREDIT_COST_IMAGE if has_images else CREDIT_COST_TEXT
-        credits = get_user_credits(request.user_id)
+        credits = get_user_credits(effective_user_id)
 
         if credits < cost:
             raise HTTPException(
@@ -128,10 +139,10 @@ async def agent_chat(request: AgentChatRequest):
     session_id = request.session_id or str(uuid.uuid4())[:12]
 
     # ===== 对话成功后扣积分 =====
-    if request.user_id:
+    if effective_user_id:
         cost = CREDIT_COST_IMAGE if has_images else CREDIT_COST_TEXT
         cost_desc = "智能体对话(含图片)" if has_images else "智能体对话(文字)"
-        deduct_credits(request.user_id, cost, cost_desc)
-        remaining_credits = get_user_credits(request.user_id)
+        deduct_credits(effective_user_id, cost, cost_desc)
+        remaining_credits = get_user_credits(effective_user_id)
 
     return AgentChatResponse(reply=reply, session_id=session_id, remaining_credits=remaining_credits)

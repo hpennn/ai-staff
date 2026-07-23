@@ -1,7 +1,7 @@
 """
 Skills API Router - 技能API路由，含积分检查
 """
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request
 from typing import Optional, List
 from pydantic import BaseModel
 
@@ -76,13 +76,25 @@ async def execute_skill(
     skill_id: str,
     request: ExecuteRequest,
     files: Optional[List[UploadFile]] = None,
+    fastapi_request: Request = None,
 ):
     """执行指定技能，含积分检查"""
+    # 优先使用Token认证
+    effective_user_id = request.user_id
+    if fastapi_request:
+        auth_header = fastapi_request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+            from auth_database import verify_token
+            user_info = verify_token(token)
+            if user_info:
+                effective_user_id = f"user_{user_info['user_id']}"
+
     # ===== 积分检查 =====
     remaining_credits = -1
-    if request.user_id:
-        register_user(request.user_id)
-        credits = get_user_credits(request.user_id)
+    if effective_user_id:
+        register_user(effective_user_id)
+        credits = get_user_credits(effective_user_id)
         if credits < CREDIT_COST_SKILL:
             raise HTTPException(
                 status_code=402,
@@ -108,9 +120,9 @@ async def execute_skill(
     result = await engine.execute(skill_id, input_data)
 
     # ===== 技能执行成功后扣积分 =====
-    if request.user_id:
-        deduct_credits(request.user_id, CREDIT_COST_SKILL, f"技能执行: {skill_id}")
-        remaining_credits = get_user_credits(request.user_id)
+    if effective_user_id:
+        deduct_credits(effective_user_id, CREDIT_COST_SKILL, f"技能执行: {skill_id}")
+        remaining_credits = get_user_credits(effective_user_id)
 
     result_dict = result.to_dict()
     result_dict["remaining_credits"] = remaining_credits
@@ -118,13 +130,24 @@ async def execute_skill(
 
 
 @router.post("/tasks")
-async def create_task(request: TaskCreateRequest):
+async def create_task(request: TaskCreateRequest, fastapi_request: Request = None):
     """创建任务（自动匹配技能），含积分检查"""
+    # 优先使用Token认证
+    effective_user_id = request.user_id
+    if fastapi_request:
+        auth_header = fastapi_request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+            from auth_database import verify_token
+            user_info = verify_token(token)
+            if user_info:
+                effective_user_id = f"user_{user_info['user_id']}"
+
     # ===== 积分检查 =====
     remaining_credits = -1
-    if request.user_id:
-        register_user(request.user_id)
-        credits = get_user_credits(request.user_id)
+    if effective_user_id:
+        register_user(effective_user_id)
+        credits = get_user_credits(effective_user_id)
         if credits < CREDIT_COST_SKILL:
             raise HTTPException(
                 status_code=402,
@@ -143,10 +166,10 @@ async def create_task(request: TaskCreateRequest):
         result = await engine.auto_execute(request.input)
 
     # ===== 任务执行成功后扣积分 =====
-    if request.user_id:
+    if effective_user_id:
         skill_desc = request.skill_id or "自动匹配"
-        deduct_credits(request.user_id, CREDIT_COST_SKILL, f"任务执行: {skill_desc}")
-        remaining_credits = get_user_credits(request.user_id)
+        deduct_credits(effective_user_id, CREDIT_COST_SKILL, f"任务执行: {skill_desc}")
+        remaining_credits = get_user_credits(effective_user_id)
 
     result_dict = result.to_dict()
     result_dict["remaining_credits"] = remaining_credits

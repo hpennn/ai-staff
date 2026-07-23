@@ -104,15 +104,32 @@ def _verify_notify_hash(params: dict) -> bool:
 # ============ Routes ============
 
 @router.get("/credits/{user_id}")
-async def query_credits(user_id: str):
-    """查询用户积分余额和套餐信息"""
+async def query_credits(user_id: str, request: Request):
+    """查询用户积分余额和套餐信息
+    
+    优先使用Token认证获取用户积分，user_id作为向后兼容的deviceId方案
+    """
+    # 尝试通过Token获取登录用户
+    effective_user_id = user_id
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        from auth_database import verify_token, find_user_by_device, bind_device
+        user_info = verify_token(token)
+        if user_info:
+            token_user_id = f"user_{user_info['user_id']}"
+            # 绑定当前deviceId到用户（如果不同）
+            if user_id and user_id.startswith("dev_"):
+                bind_device(user_info["user_id"], user_id)
+            effective_user_id = token_user_id
+
     # 自动注册（确保用户存在）
-    user = register_user(user_id)
-    credits = get_user_credits(user_id)
-    recent_logs = get_credit_logs(user_id, limit=10)
+    user = register_user(effective_user_id)
+    credits = get_user_credits(effective_user_id)
+    recent_logs = get_credit_logs(effective_user_id, limit=10)
 
     return {
-        "user_id": user_id,
+        "user_id": effective_user_id,
         "credits": credits,
         "packages": {k: {"price": v["price"], "credits": v["credits"], "label": v["label"], "desc": v["desc"]} for k, v in CREDIT_PACKAGES.items()},
         "credit_costs": CREDIT_COSTS,
@@ -121,13 +138,23 @@ async def query_credits(user_id: str):
 
 
 @router.post("/credits/recharge")
-async def create_payment(req: CreatePaymentRequest):
+async def create_payment(req: CreatePaymentRequest, request: Request):
     """创建积分包购买订单（虎皮椒支付）"""
     if req.package not in CREDIT_PACKAGES:
         raise HTTPException(status_code=400, detail="无效的套餐类型")
 
+    # 优先使用Token认证
+    effective_user_id = req.user_id
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        from auth_database import verify_token
+        user_info = verify_token(token)
+        if user_info:
+            effective_user_id = f"user_{user_info['user_id']}"
+
     # 确保用户已注册
-    register_user(req.user_id)
+    register_user(effective_user_id)
 
     pkg = CREDIT_PACKAGES[req.package]
     order_id = _generate_order_id()
@@ -136,7 +163,7 @@ async def create_payment(req: CreatePaymentRequest):
     credits = pkg["credits"]
 
     # 创建订单
-    create_order(order_id, req.user_id, amount, req.package, credits)
+    create_order(order_id, effective_user_id, amount, req.package, credits)
 
     # 构建虎皮椒支付参数
     nonce = str(int(time.time()))

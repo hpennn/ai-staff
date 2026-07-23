@@ -18,6 +18,10 @@ init_db()
 from credits_database import init_credits_db
 init_credits_db()
 
+# Initialize auth database (user phone login)
+from auth_database import init_auth_db
+init_auth_db()
+
 # Load skills engine
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

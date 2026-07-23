@@ -202,12 +202,13 @@
             <h1 class="text-base font-bold text-slate-800">我的</h1>
         </div>
         <div class="flex-1 overflow-y-auto">
-            <div class="px-5 py-6 flex items-center gap-4">
+            <div id="profile-user-section" class="px-5 py-6 flex items-center gap-4">
                 <div class="w-16 h-16 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200/50">U</div>
                 <div>
-                    <p class="font-bold text-slate-800 text-lg">用户</p>
-                    <p class="text-xs text-slate-400 mt-0.5">积分制 · 已使用 <span id="usage-count">0</span> 次</p>
+                    <p class="font-bold text-slate-800 text-lg">未登录</p>
+                    <p class="text-xs text-slate-400 mt-0.5">点击登录享更多权益</p>
                 </div>
+                <button id="profile-login-btn" onclick="openLoginModal()" class="ml-auto text-xs font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-2 rounded-full shadow-sm shadow-indigo-200/50 active:scale-95 transition-all">登录</button>
             </div>
             <!-- Credits Card -->
             <div class="mx-4 mb-4 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-5 text-white shadow-lg shadow-indigo-200/50">
@@ -334,6 +335,37 @@
             <button onclick="closeInsufficientModal()" class="w-full mt-2 text-sm text-slate-400 py-2">稍后再说</button>
         </div>
     </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal-overlay" onclick="if(event.target===this)closeLoginModal()">
+        <div class="modal-content px-6 pt-6 pb-8 safe-bottom">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-slate-800">手机号登录</h3>
+                <button onclick="closeLoginModal()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">手机号</label>
+                    <input type="tel" id="login-phone" placeholder="请输入手机号" maxlength="11" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-400 transition-all bg-slate-50 focus:bg-white" oninput="this.value=this.value.replace(/[^\d]/g,'')">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">验证码</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="login-code" placeholder="6位验证码" maxlength="6" class="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-400 transition-all bg-slate-50 focus:bg-white" oninput="this.value=this.value.replace(/[^\d]/g,'')">
+                        <button id="send-code-btn" onclick="sendLoginCode()" class="px-4 py-3 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">发送验证码</button>
+                    </div>
+                </div>
+                <div id="dev-code-hint" class="hidden bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-xs text-amber-700">
+                    🔧 开发模式：验证码已自动填入
+                </div>
+                <button id="login-btn" onclick="doLogin()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium rounded-xl py-3.5 text-sm shadow-lg shadow-indigo-200/50 active:scale-[0.98] transition-all disabled:opacity-50">登录 / 注册</button>
+                <p class="text-xs text-slate-400 text-center">首次登录将自动注册账号</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Navigation -->
     <div class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100/80 flex items-center justify-around py-1.5 safe-bottom z-30">
         <button onclick="navigateTo('home')" class="tab-btn active flex flex-col items-center gap-0.5 px-5 py-1.5 rounded-xl" data-tab="home">
@@ -415,12 +447,201 @@ function getDeviceId() {
 }
 const DEVICE_ID = getDeviceId();
 
+// ===== 认证状态 =====
+let AUTH_TOKEN = localStorage.getItem('ai_auth_token') || '';
+let AUTH_USER = null; // {id, phone, nickname, credits}
+
+function authHeaders() {
+    const headers = {'Content-Type': 'application/json'};
+    if (AUTH_TOKEN) headers['Authorization'] = 'Bearer ' + AUTH_TOKEN;
+    return headers;
+}
+
+function isLoggedIn() { return !!AUTH_TOKEN; }
+
+async function checkAuth() {
+    if (!AUTH_TOKEN) { AUTH_USER = null; return; }
+    try {
+        const resp = await fetch(API_BASE + '/auth/me', { headers: authHeaders() });
+        if (resp.ok) {
+            AUTH_USER = await resp.json();
+        } else {
+            // Token expired
+            AUTH_TOKEN = '';
+            AUTH_USER = null;
+            localStorage.removeItem('ai_auth_token');
+        }
+    } catch(e) {
+        AUTH_USER = null;
+    }
+    updateProfileUI();
+}
+
+function updateProfileUI() {
+    const section = document.getElementById('profile-user-section');
+    const loginBtn = document.getElementById('profile-login-btn');
+    if (!section) return;
+
+    if (AUTH_USER) {
+        section.innerHTML = `
+            <div class="w-16 h-16 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200/50">${(AUTH_USER.nickname || AUTH_USER.phone || 'U')[0]}</div>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-slate-800 text-lg truncate">${escapeHtml(AUTH_USER.nickname || AUTH_USER.phone)}</p>
+                <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(AUTH_USER.phone)} · 已使用 <span id="usage-count">${taskHistory.length}</span> 次</p>
+            </div>
+            <button onclick="doLogout()" class="text-xs font-medium text-slate-500 hover:text-red-500 bg-slate-100 hover:bg-red-50 px-3 py-1.5 rounded-full transition-all">退出</button>
+        `;
+    } else {
+        section.innerHTML = `
+            <div class="w-16 h-16 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200/50">U</div>
+            <div>
+                <p class="font-bold text-slate-800 text-lg">未登录</p>
+                <p class="text-xs text-slate-400 mt-0.5">点击登录享更多权益</p>
+            </div>
+            <button id="profile-login-btn" onclick="openLoginModal()" class="ml-auto text-xs font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-2 rounded-full shadow-sm shadow-indigo-200/50 active:scale-95 transition-all">登录</button>
+        `;
+    }
+}
+
+// ===== 登录弹窗 =====
+let loginCountdown = 0;
+let loginTimer = null;
+
+function openLoginModal() {
+    document.getElementById('login-phone').value = '';
+    document.getElementById('login-code').value = '';
+    document.getElementById('dev-code-hint').classList.add('hidden');
+    document.getElementById('send-code-btn').disabled = false;
+    document.getElementById('send-code-btn').textContent = '发送验证码';
+    document.getElementById('login-btn').disabled = false;
+    document.getElementById('login-modal').classList.add('active');
+}
+
+function closeLoginModal() {
+    document.getElementById('login-modal').classList.remove('active');
+    if (loginTimer) { clearInterval(loginTimer); loginTimer = null; }
+    loginCountdown = 0;
+}
+
+async function sendLoginCode() {
+    const phone = document.getElementById('login-phone').value.trim();
+    if (!/^1[3-9]\d{9}$/.test(phone)) { showToast('请输入正确的手机号'); return; }
+
+    const btn = document.getElementById('send-code-btn');
+    btn.disabled = true;
+
+    try {
+        const resp = await fetch(API_BASE + '/auth/send-code', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ phone })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+            showToast(data.detail || '发送失败');
+            btn.disabled = false;
+            return;
+        }
+
+        // 开发模式自动填入验证码
+        if (data.code) {
+            document.getElementById('login-code').value = data.code;
+            document.getElementById('dev-code-hint').classList.remove('hidden');
+        }
+
+        showToast('验证码已发送');
+
+        // 倒计时60秒
+        loginCountdown = 60;
+        btn.textContent = loginCountdown + 's';
+        loginTimer = setInterval(() => {
+            loginCountdown--;
+            if (loginCountdown <= 0) {
+                clearInterval(loginTimer);
+                loginTimer = null;
+                btn.disabled = false;
+                btn.textContent = '发送验证码';
+            } else {
+                btn.textContent = loginCountdown + 's';
+            }
+        }, 1000);
+    } catch(e) {
+        showToast('网络异常，请重试');
+        btn.disabled = false;
+    }
+}
+
+async function doLogin() {
+    const phone = document.getElementById('login-phone').value.trim();
+    const code = document.getElementById('login-code').value.trim();
+
+    if (!/^1[3-9]\d{9}$/.test(phone)) { showToast('请输入正确的手机号'); return; }
+    if (!code || code.length !== 6) { showToast('请输入6位验证码'); return; }
+
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.textContent = '登录中...';
+
+    try {
+        const resp = await fetch(API_BASE + '/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ phone, code, device_id: DEVICE_ID })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+            showToast(data.detail || '登录失败');
+            btn.disabled = false;
+            btn.textContent = '登录 / 注册';
+            return;
+        }
+
+        // 登录成功
+        AUTH_TOKEN = data.token;
+        localStorage.setItem('ai_auth_token', AUTH_TOKEN);
+
+        if (data.migrated) {
+            showToast('登录成功！设备积分已合并');
+        } else {
+            showToast('登录成功！');
+        }
+
+        closeLoginModal();
+
+        // 刷新用户信息和积分
+        await checkAuth();
+        await fetchCredits();
+    } catch(e) {
+        showToast('网络异常，请重试');
+        btn.disabled = false;
+        btn.textContent = '登录 / 注册';
+    }
+}
+
+async function doLogout() {
+    try {
+        await fetch(API_BASE + '/auth/logout', {
+            method: 'POST',
+            headers: authHeaders()
+        });
+    } catch(e) {}
+
+    AUTH_TOKEN = '';
+    AUTH_USER = null;
+    localStorage.removeItem('ai_auth_token');
+    updateProfileUI();
+    fetchCredits();
+    showToast('已退出登录');
+}
+
 // ===== 积分相关 =====
 let currentCredits = -1;
 
 async function fetchCredits() {
     try {
-        const resp = await fetch(API_BASE + '/credits/' + DEVICE_ID);
+        const resp = await fetch(API_BASE + '/credits/' + DEVICE_ID, { headers: authHeaders() });
         const data = await resp.json();
         currentCredits = data.credits;
         document.getElementById('credits-balance').textContent = data.credits.toLocaleString();
@@ -491,7 +712,7 @@ async function purchasePackage(packageKey) {
     try {
         const resp = await fetch(API_BASE + '/credits/recharge', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify({ user_id: DEVICE_ID, package: packageKey })
         });
         const data = await resp.json();
@@ -546,6 +767,7 @@ function init() {
     renderAgentsGrid();
     loadSkillHistory();
     updateUsageCount();
+    checkAuth(); // Check login state and update UI
     fetchCredits(); // Load credits on init
 }
 
@@ -759,7 +981,7 @@ async function sendAgentMessage() {
         const imageUrls = images.map(i => i.dataUrl);
         const resp = await fetch(API_BASE + '/agent-chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify({
                 role: agent.role,
                 custom_prompt: agent.customPrompt || '',
@@ -895,7 +1117,7 @@ async function executeSkill() {
     try {
         const resp = await fetch(API_BASE + '/skills/' + skill.id + '/execute', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify({ text: inputText || skill.desc, user_id: DEVICE_ID })
         });
         if (resp.status === 402) {
