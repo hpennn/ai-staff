@@ -24,8 +24,8 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .page { display: none; }
         .page.active { display: flex; flex-direction: column; }
-        .fade-in { animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.25s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .skill-card { transition: all 0.2s ease; }
         .skill-card:active { transform: scale(0.96); }
         .slot-card { transition: all 0.2s ease; border: 2px dashed #cbd5e1; }
@@ -35,7 +35,7 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
         input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.3); }
-        .msg-bubble { max-width: 80%; word-wrap: break-word; }
+        .msg-bubble { max-width: 82%; word-wrap: break-word; }
         .chat-messages { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .skill-detail-page { position: absolute; inset: 0; z-index: 40; background: white; display: none; flex-direction: column; }
         .skill-detail-page.active { display: flex; }
@@ -44,6 +44,18 @@
         .typing-dot { animation: pulse-dot 1.4s infinite; }
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        .agent-card { transition: all 0.2s ease; }
+        .agent-card:active { transform: scale(0.97); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 60; display: none; align-items: flex-end; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; border-radius: 20px 20px 0 0; width: 100%; max-width: 32rem; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .agent-avatar { width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .agent-avatar-sm { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .icon-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+        .icon-option { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+        .icon-option.selected { border-color: #6366f1; background: #eef2ff; }
+        .icon-option:active { transform: scale(0.9); }
     </style>
 </head>
 <body class="bg-slate-50 h-screen overflow-hidden">
@@ -82,6 +94,44 @@
         </div>
     </div>
 
+    <!-- Page: 智能体 -->
+    <div id="page-agents" class="page h-full" style="padding-bottom: 70px;">
+        <!-- 智能体列表视图 -->
+        <div id="agents-list-view" class="h-full flex flex-col">
+            <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100 sticky top-0 z-10">
+                <h1 class="text-lg font-bold text-slate-800">智能体</h1>
+                <button onclick="openCreateAgent()" class="flex items-center gap-1 text-xs text-indigo-500 font-medium hover:text-indigo-600 transition-colors bg-indigo-50 px-3 py-1.5 rounded-full">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    添加
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4 py-4">
+                <div class="grid grid-cols-2 gap-3" id="agents-grid"></div>
+            </div>
+        </div>
+        <!-- 单个智能体对话视图 -->
+        <div id="agent-chat-view" class="h-full flex flex-col absolute inset-0 bg-white z-20" style="display:none;">
+            <div class="flex items-center px-4 py-3 bg-white border-b border-slate-100 sticky top-0 z-10">
+                <button onclick="closeAgentChat()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors mr-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <div class="agent-avatar-sm" id="agent-chat-avatar"></div>
+                <div class="ml-2 flex-1">
+                    <h2 id="agent-chat-name" class="font-semibold text-slate-800 text-sm"></h2>
+                    <p id="agent-chat-role" class="text-xs text-slate-400"></p>
+                </div>
+                <button onclick="clearAgentChat()" class="text-xs text-slate-400 hover:text-red-400 transition-colors">清空</button>
+            </div>
+            <div id="agent-chat-messages" class="chat-messages px-4 py-4 space-y-3 flex-1"></div>
+            <div class="bg-white border-t border-slate-100 px-3 py-2 flex items-end gap-2 sticky bottom-0" style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);">
+                <textarea id="agent-chat-input" rows="1" placeholder="输入消息..." class="flex-1 resize-none border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAgentMessage()}"></textarea>
+                <button onclick="sendAgentMessage()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center hover:bg-indigo-600 transition-colors shadow-sm flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Page: 任务 -->
     <div id="page-tasks" class="page h-full" style="padding-bottom: 140px;">
         <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100 sticky top-0 z-10">
@@ -96,36 +146,6 @@
                 <p class="text-sm text-slate-400">还没有任务记录</p>
                 <p class="text-xs text-slate-300 mt-1">使用技能后会自动记录在这里</p>
             </div>
-        </div>
-    </div>
-
-    <!-- Page: 对话 -->
-    <div id="page-chat" class="page h-full" style="padding-bottom: 70px;">
-        <div class="flex items-center px-4 py-3 bg-white border-b border-slate-100 sticky top-0 z-10">
-            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mr-2">
-                <span class="text-white text-xs font-bold">AI</span>
-            </div>
-            <div>
-                <h2 class="font-semibold text-slate-800 text-sm">智能助手</h2>
-                <p class="text-xs text-slate-400">自动匹配技能执行任务</p>
-            </div>
-        </div>
-        <div id="chat-messages" class="chat-messages px-4 py-4 space-y-3">
-            <div class="flex justify-start fade-in">
-                <div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">
-                    👋 你好！我是你的智能助手。<br>你可以让我帮你写文档、处理表格、识别图片文字等。<br><span class="text-xs text-slate-400">试试输入你的需求，我会自动匹配技能来处理。</span>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white border-t border-slate-100 px-3 py-2 flex items-end gap-2 sticky bottom-0">
-            <button onclick="triggerFileUpload()" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-indigo-500 transition-colors flex-shrink-0">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-            </button>
-            <input type="file" id="chat-file-input" class="hidden" multiple onchange="handleFileAttach(event)">
-            <textarea id="chat-input" rows="1" placeholder="告诉我你想做什么..." class="flex-1 resize-none border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-indigo-400 transition-colors" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}"></textarea>
-            <button onclick="sendChatMessage()" class="w-9 h-9 bg-indigo-500 text-white rounded-full flex items-center justify-center hover:bg-indigo-600 transition-colors shadow-sm flex-shrink-0">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-            </button>
         </div>
     </div>
 
@@ -155,9 +175,9 @@
                     <span class="text-lg">📊</span><span class="flex-1 text-sm text-slate-700">使用统计</span>
                     <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </div>
-                <div onclick="showToast('当前已是最新版本 v2.1.0')" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                <div onclick="showToast('当前已是最新版本 v2.2.0')" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
                     <span class="text-lg">ℹ️</span><span class="flex-1 text-sm text-slate-700">关于</span>
-                    <span class="text-xs text-slate-400">v2.1.0</span>
+                    <span class="text-xs text-slate-400">v2.2.0</span>
                 </div>
             </div>
         </div>
@@ -185,19 +205,54 @@
         </div>
     </div>
 
+    <!-- 创建智能体 Modal -->
+    <div id="create-agent-modal" class="modal-overlay" onclick="if(event.target===this)closeCreateAgent()">
+        <div class="modal-content px-5 pt-5 pb-8">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-lg font-bold text-slate-800">添加智能体</h3>
+                <button onclick="closeCreateAgent()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <!-- 图标选择 -->
+                <div>
+                    <label class="text-sm font-medium text-slate-700 mb-2 block">选择图标</label>
+                    <div class="icon-picker" id="icon-picker"></div>
+                </div>
+                <!-- 名称 -->
+                <div>
+                    <label class="text-sm font-medium text-slate-700 mb-1.5 block">智能体名称</label>
+                    <input type="text" id="agent-name-input" placeholder="如：代码助手、翻译官..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors" maxlength="20">
+                </div>
+                <!-- 角色分工 -->
+                <div>
+                    <label class="text-sm font-medium text-slate-700 mb-1.5 block">角色分工</label>
+                    <input type="text" id="agent-role-input" placeholder="如：负责代码审查和Bug修复" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-400 transition-colors" maxlength="40">
+                </div>
+                <!-- 详细设定 -->
+                <div>
+                    <label class="text-sm font-medium text-slate-700 mb-1.5 block">详细设定 <span class="text-slate-400 font-normal">(可选)</span></label>
+                    <textarea id="agent-prompt-input" rows="3" placeholder="描述这个智能体的专业能力、回答风格、工作原则等..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm resize-none focus:border-indigo-400 transition-colors"></textarea>
+                </div>
+                <button onclick="saveNewAgent()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl py-3 text-sm transition-all shadow-sm active:scale-[0.98]">创建智能体</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Navigation -->
     <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex items-center justify-around py-2 safe-bottom z-30">
         <button onclick="navigateTo('home')" class="tab-btn active flex flex-col items-center gap-0.5 px-4 py-1" data-tab="home">
             <span class="tab-icon w-8 h-8 rounded-xl flex items-center justify-center text-lg transition-colors">🏠</span>
             <span class="text-xs text-slate-500">工作台</span>
         </button>
+        <button onclick="navigateTo('agents')" class="tab-btn flex flex-col items-center gap-0.5 px-4 py-1" data-tab="agents">
+            <span class="tab-icon w-8 h-8 rounded-xl flex items-center justify-center text-lg transition-colors">🤖</span>
+            <span class="text-xs text-slate-500">智能体</span>
+        </button>
         <button onclick="navigateTo('tasks')" class="tab-btn flex flex-col items-center gap-0.5 px-4 py-1" data-tab="tasks">
             <span class="tab-icon w-8 h-8 rounded-xl flex items-center justify-center text-lg transition-colors">📋</span>
             <span class="text-xs text-slate-500">任务</span>
-        </button>
-        <button onclick="navigateTo('chat')" class="tab-btn flex flex-col items-center gap-0.5 px-4 py-1" data-tab="chat">
-            <span class="tab-icon w-8 h-8 rounded-xl flex items-center justify-center text-lg transition-colors">💬</span>
-            <span class="text-xs text-slate-500">对话</span>
         </button>
         <button onclick="navigateTo('profile')" class="tab-btn flex flex-col items-center gap-0.5 px-4 py-1" data-tab="profile">
             <span class="tab-icon w-8 h-8 rounded-xl flex items-center justify-center text-lg transition-colors">👤</span>
@@ -210,6 +265,7 @@
 <div id="toast" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-800 text-white text-sm px-5 py-2.5 rounded-xl shadow-lg z-50 opacity-0 pointer-events-none transition-opacity duration-200"></div>
 
 <script>
+// ===== 数据 =====
 const PRESET_SKILLS = [
     { id: 'doc_generator', icon: '\u{1F4C4}', name: '文档生成', desc: 'Word/PDF/Markdown自动生成', color: 'from-blue-500 to-indigo-500', inputType: 'textarea', placeholder: '描述你要生成的文档内容...' },
     { id: 'spreadsheet', icon: '\u{1F4CA}', name: '表格处理', desc: 'Excel数据整理、公式、图表', color: 'from-green-500 to-emerald-500', inputType: 'file+text', placeholder: '上传Excel或描述数据需求...' },
@@ -219,17 +275,327 @@ const PRESET_SKILLS = [
     { id: 'copywriter', icon: '\u{270D}\u{FE0F}', name: '文案生成', desc: '营销文案、公众号、小红书内容', color: 'from-cyan-500 to-teal-500', inputType: 'textarea', placeholder: '描述文案需求，如产品/风格/平台...' }
 ];
 
+const DEFAULT_AGENTS = [
+    { id: 'general', icon: '🧠', name: '通用助手', role: '全能型智能助手', color: 'from-indigo-400 to-purple-500', welcome: '你好！我是你的通用助手，可以帮你解答问题、处理任务、提供建议。有什么需要帮忙的？', isPreset: true },
+    { id: 'doc_writer', icon: '📝', name: '文档专家', role: '负责文档撰写和排版', color: 'from-blue-400 to-indigo-500', welcome: '你好！我是文档专家，擅长撰写各类文档、报告、方案。告诉我你需要什么类型的文档？', isPreset: true },
+    { id: 'analyst', icon: '📊', name: '数据分析师', role: '负责数据分析和可视化', color: 'from-emerald-400 to-teal-500', welcome: '你好！我是数据分析师，可以帮你分析数据、生成报表、发现规律。上传文件或描述你的数据需求吧。', isPreset: true },
+    { id: 'creator', icon: '✨', name: '创意助手', role: '负责文案创作和内容生成', color: 'from-pink-400 to-rose-500', welcome: '你好！我是创意助手，擅长文案创作、营销策划、内容生成。告诉我你的创作需求吧！', isPreset: true },
+    { id: 'coder', icon: '💻', name: '代码助手', role: '负责代码编写和调试', color: 'from-slate-500 to-gray-600', welcome: '你好！我是代码助手，可以帮你编写代码、调试Bug、优化架构。描述你的技术问题吧。', isPreset: true },
+    { id: 'translator', icon: '🌐', name: '翻译官', role: '负责多语言翻译和本地化', color: 'from-amber-400 to-orange-500', welcome: '你好！我是翻译官，支持中、英、日、韩等多语言互译。发送需要翻译的内容即可。', isPreset: true }
+];
+
+const AGENT_ICONS = ['🧠','📝','📊','✨','💻','🌐','🎨','🔬','📚','🎯','⚡','🛡️','🔧','📱','🎬','🏗️','🧪','📮','🔍','🤖','👨\u200d💼','👩\u200d💼','🦊','🐱','🐶','🦉'];
+const AGENT_COLORS = [
+    'from-indigo-400 to-purple-500', 'from-blue-400 to-indigo-500', 'from-emerald-400 to-teal-500',
+    'from-pink-400 to-rose-500', 'from-amber-400 to-orange-500', 'from-cyan-400 to-blue-500',
+    'from-violet-400 to-purple-500', 'from-slate-500 to-gray-600', 'from-red-400 to-pink-500',
+    'from-lime-400 to-green-500'
+];
+
 let taskHistory = JSON.parse(localStorage.getItem('ai_task_history') || '[]');
 let skillHistory = {};
 let currentSkillId = null;
+let customAgents = JSON.parse(localStorage.getItem('ai_custom_agents') || '[]');
+let agentChats = JSON.parse(localStorage.getItem('ai_agent_chats') || '{}');
+let currentAgentId = null;
+let selectedIcon = '🤖';
 
+// ===== 初始化 =====
 function init() {
     renderSkillsGrid();
     renderCustomSlots();
     renderTaskList();
+    renderAgentsGrid();
     loadSkillHistory();
 }
 
+function getAllAgents() {
+    return [...DEFAULT_AGENTS, ...customAgents];
+}
+
+// ===== 智能体页面 =====
+function renderAgentsGrid() {
+    const grid = document.getElementById('agents-grid');
+    const agents = getAllAgents();
+    grid.innerHTML = agents.map(a => {
+        const msgs = agentChats[a.id] || [];
+        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+        const lastPreview = lastMsg ? (lastMsg.role === 'user' ? '你: ' : '') + (lastMsg.content.length > 20 ? lastMsg.content.substring(0, 20) + '...' : lastMsg.content) : '';
+        const msgCount = msgs.filter(m => m.role === 'user').length;
+        return `
+        <div class="agent-card bg-white rounded-2xl border border-slate-100 p-4 cursor-pointer hover:shadow-md hover:shadow-slate-100 hover:border-indigo-100" onclick="openAgentChat('${a.id}')">
+            <div class="flex items-start gap-3 mb-3">
+                <div class="agent-avatar bg-gradient-to-br ${a.color} text-white shadow-sm">${a.icon}</div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold text-slate-800 text-sm truncate">${a.name}</h3>
+                    <p class="text-xs text-slate-400 truncate">${a.role}</p>
+                </div>
+            </div>
+            ${lastPreview ? `
+            <div class="bg-slate-50 rounded-lg px-3 py-2 mb-2">
+                <p class="text-xs text-slate-500 truncate">${escapeHtml(lastPreview)}</p>
+            </div>` : ''}
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-300">${msgCount > 0 ? msgCount + '条对话' : '暂无对话'}</span>
+                <span class="text-xs text-indigo-500 font-medium">进入 →</span>
+            </div>
+        </div>`;
+    }).join('') + `
+        <div class="agent-card rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors" onclick="openCreateAgent()" style="min-height: 140px;">
+            <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mb-2">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            </div>
+            <span class="text-xs text-slate-400 font-medium">添加智能体</span>
+        </div>`;
+}
+
+function openAgentChat(agentId) {
+    const agent = getAllAgents().find(a => a.id === agentId);
+    if (!agent) return;
+    currentAgentId = agentId;
+
+    document.getElementById('agent-chat-avatar').className = 'agent-avatar-sm bg-gradient-to-br ' + agent.color + ' text-white shadow-sm';
+    document.getElementById('agent-chat-avatar').textContent = agent.icon;
+    document.getElementById('agent-chat-name').textContent = agent.name;
+    document.getElementById('agent-chat-role').textContent = agent.role;
+
+    renderAgentMessages(agent);
+    document.getElementById('agent-chat-view').style.display = 'flex';
+}
+
+function closeAgentChat() {
+    document.getElementById('agent-chat-view').style.display = 'none';
+    currentAgentId = null;
+    renderAgentsGrid();
+}
+
+function renderAgentMessages(agent) {
+    const container = document.getElementById('agent-chat-messages');
+    const msgs = agentChats[agent.id] || [];
+
+    if (msgs.length === 0) {
+        container.innerHTML = `
+            <div class="flex justify-start fade-in">
+                <div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">
+                    👋 ${agent.welcome}
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3 fade-in">
+                ${getQuickPrompts(agent).map(p => `<button onclick="quickSendAgent('${escapeHtml(p)}')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors">${p}</button>`).join('')}
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = msgs.map(m => {
+        if (m.role === 'user') {
+            return `<div class="flex justify-end fade-in"><div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">${escapeHtml(m.content)}</div></div>`;
+        } else {
+            return `<div class="flex justify-start fade-in"><div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">${m.content}</div></div>`;
+        }
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+}
+
+function getQuickPrompts(agent) {
+    const prompts = {
+        general: ['帮我写一封邮件', '总结一下这个观点', '有什么好的建议？'],
+        doc_writer: ['帮我写个工作汇报', '写一份项目方案', '润色这段文字'],
+        analyst: ['分析这组数据', '生成数据报表', '发现数据规律'],
+        creator: ['写一篇小红书文案', '帮我起个标题', '写个短视频脚本'],
+        coder: ['帮我写段代码', '这个Bug怎么修？', '优化这段代码'],
+        translator: ['翻译成英文', '翻译成日文', '本地化这段文案']
+    };
+    return prompts[agent.id] || ['你好，帮我个忙', '你能做什么？', '开始工作吧'];
+}
+
+function quickSendAgent(text) {
+    document.getElementById('agent-chat-input').value = text;
+    sendAgentMessage();
+}
+
+function sendAgentMessage() {
+    const input = document.getElementById('agent-chat-input');
+    const msg = input.value.trim();
+    if (!msg || !currentAgentId) return;
+    input.value = '';
+    input.style.height = 'auto';
+
+    if (!agentChats[currentAgentId]) agentChats[currentAgentId] = [];
+    agentChats[currentAgentId].push({ role: 'user', content: msg, time: Date.now() });
+
+    const agent = getAllAgents().find(a => a.id === currentAgentId);
+    renderAgentMessages(agent);
+
+    setTimeout(() => {
+        const reply = generateAgentReply(agent, msg);
+        agentChats[currentAgentId].push({ role: 'assistant', content: reply, time: Date.now() });
+        saveAgentChats();
+        renderAgentMessages(agent);
+        taskHistory.push({ skillId: 'agent_' + agent.id, skillName: agent.name, input: msg, time: Date.now(), status: 'success' });
+        localStorage.setItem('ai_task_history', JSON.stringify(taskHistory));
+    }, 600 + Math.random() * 800);
+}
+
+function generateAgentReply(agent, userMsg) {
+    const replies = {
+        general: [
+            '好的，我来帮你处理。' + (userMsg.length > 10 ? '根据你的描述，' : '') + '我理解你的需求是「' + userMsg.substring(0, 30) + (userMsg.length > 30 ? '...' : '') + '」。让我来为你分析和解答。',
+            '收到！这个问题我来帮你看看。' + getAnalysis(userMsg),
+            '明白了，让我为你梳理一下要点，并提供可行的建议。'
+        ],
+        doc_writer: [
+            '好的，我来帮你写。根据你提供的需求，这是一份初稿：\n\n' + generateDocDraft(userMsg),
+            '收到写作需求！我来为你起草文档。' + generateDocDraft(userMsg),
+        ],
+        analyst: [
+            '数据分析中...\n\n根据你提供的信息，我发现以下关键数据特征：\n' + generateDataAnalysis(userMsg),
+            '收到数据需求。以下是分析结果：\n' + generateDataAnalysis(userMsg),
+        ],
+        creator: [
+            '创意来了！基于你的需求，这是几个方案：\n\n' + generateCreative(userMsg),
+            '好的，灵感已就位！这是为你创作的内容：\n\n' + generateCreative(userMsg),
+        ],
+        coder: [
+            '代码方案如下：\n\n' + generateCode(userMsg),
+            '分析问题中... 这是建议的代码实现：\n\n' + generateCode(userMsg),
+        ],
+        translator: [
+            '翻译结果：\n\n' + generateTranslation(userMsg),
+        ]
+    };
+
+    const agentReplies = replies[agent.id];
+    if (agentReplies) {
+        return agentReplies[Math.floor(Math.random() * agentReplies.length)];
+    }
+
+    // 自定义智能体的通用回复
+    return '好的，我理解了你的需求。作为' + agent.role + '，我来帮你处理：\n\n' + generateGeneralReply(userMsg);
+}
+
+function getAnalysis(msg) {
+    return '\n\n**分析要点：**\n1. 核心诉求已明确\n2. 需要考虑的关键因素\n3. 建议的执行方案\n\n你觉得这个方向对吗？需要我深入哪个方面？';
+}
+
+function generateDocDraft(msg) {
+    const topic = msg.length > 20 ? msg.substring(0, 20) + '...' : msg;
+    return '<div class="bg-slate-50 rounded-lg p-3 border border-slate-100 text-xs leading-relaxed">' +
+        '<p class="font-semibold text-slate-800 mb-2">📄 ' + escapeHtml(topic) + '</p>' +
+        '<p class="text-slate-600 mb-1">一、背景与目标</p>' +
+        '<p class="text-slate-500 mb-2">根据需求描述，本文档旨在...</p>' +
+        '<p class="text-slate-600 mb-1">二、主要内容</p>' +
+        '<p class="text-slate-500 mb-2">（待根据具体要求展开）</p>' +
+        '<p class="text-slate-600 mb-1">三、总结与建议</p>' +
+        '<p class="text-slate-500">初步框架已生成，需要我补充哪部分？</p></div>';
+}
+
+function generateDataAnalysis(msg) {
+    return '<div class="bg-slate-50 rounded-lg p-3 border border-slate-100 text-xs">' +
+        '<table class="w-full"><tr class="border-b"><td class="py-1 font-medium">数据量</td><td class="py-1 text-right">待分析</td></tr>' +
+        '<tr class="border-b"><td class="py-1 font-medium">数据格式</td><td class="py-1 text-right">待确认</td></tr>' +
+        '<tr><td class="py-1 font-medium">建议</td><td class="py-1 text-right text-indigo-500">上传文件开始分析</td></tr></table></div>';
+}
+
+function generateCreative(msg) {
+    const topic = msg.length > 15 ? msg.substring(0, 15) : msg;
+    return '<div class="bg-pink-50 rounded-lg p-3 border border-pink-100 text-xs leading-relaxed">' +
+        '<p class="text-slate-700">✨ 方案一：以「' + escapeHtml(topic) + '」为切入点</p>' +
+        '<p class="text-slate-500 mb-2">从用户痛点出发，用故事化方式呈现...</p>' +
+        '<p class="text-slate-700">✨ 方案二：数据驱动型</p>' +
+        '<p class="text-slate-500">用数字和对比制造冲击力，强调效果...</p></div>';
+}
+
+function generateCode(msg) {
+    return '<div class="bg-slate-800 rounded-lg p-3 text-xs font-mono text-green-400 leading-relaxed overflow-x-auto">' +
+        '<p class="text-slate-400">// 根据你的需求，建议方案：</p>' +
+        '<p class="text-slate-400">// 请提供更具体的技术要求，我给出完整实现</p>' +
+        '<p>function solution(input) {</p>' +
+        '<p>  // TODO: 根据需求实现</p>' +
+        '<p>  return result;</p>' +
+        '<p>}</p></div>';
+}
+
+function generateTranslation(msg) {
+    return '<div class="bg-blue-50 rounded-lg p-3 border border-blue-100 text-xs leading-relaxed">' +
+        '<p class="text-slate-500 mb-1">🌐 翻译结果：</p>' +
+        '<p class="text-slate-700">（请提供需要翻译的完整内容，我会为你准确翻译）</p>' +
+        '<p class="text-slate-400 mt-2">支持语言：中/英/日/韩/法/德/西...</p></div>';
+}
+
+function generateGeneralReply(msg) {
+    return '<div class="space-y-2">' +
+        '<p>根据你提到的「' + escapeHtml(msg.substring(0, 25)) + (msg.length > 25 ? '...' : '') + '」，</p>' +
+        '<p>我来帮你处理这个任务。请提供更多细节，我会给出更精准的回复。</p></div>';
+}
+
+function saveAgentChats() {
+    localStorage.setItem('ai_agent_chats', JSON.stringify(agentChats));
+}
+
+function clearAgentChat() {
+    if (!currentAgentId) return;
+    agentChats[currentAgentId] = [];
+    saveAgentChats();
+    const agent = getAllAgents().find(a => a.id === currentAgentId);
+    renderAgentMessages(agent);
+    showToast('对话已清空');
+}
+
+// ===== 创建智能体 =====
+function openCreateAgent() {
+    selectedIcon = '🤖';
+    renderIconPicker();
+    document.getElementById('agent-name-input').value = '';
+    document.getElementById('agent-role-input').value = '';
+    document.getElementById('agent-prompt-input').value = '';
+    document.getElementById('create-agent-modal').classList.add('active');
+}
+
+function closeCreateAgent() {
+    document.getElementById('create-agent-modal').classList.remove('active');
+}
+
+function renderIconPicker() {
+    const picker = document.getElementById('icon-picker');
+    picker.innerHTML = AGENT_ICONS.map(icon =>
+        '<div class="icon-option ' + (icon === selectedIcon ? 'selected' : '') + ' bg-slate-50 hover:bg-slate-100" onclick="selectIcon(\'' + icon + '\', this)">' + icon + '</div>'
+    ).join('');
+}
+
+function selectIcon(icon, el) {
+    selectedIcon = icon;
+    document.querySelectorAll('#icon-picker .icon-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+function saveNewAgent() {
+    const name = document.getElementById('agent-name-input').value.trim();
+    const role = document.getElementById('agent-role-input').value.trim();
+    const prompt = document.getElementById('agent-prompt-input').value.trim();
+
+    if (!name) { showToast('请输入智能体名称'); return; }
+    if (!role) { showToast('请输入角色分工'); return; }
+
+    const colorIdx = customAgents.length % AGENT_COLORS.length;
+    const newAgent = {
+        id: 'custom_' + Date.now(),
+        icon: selectedIcon,
+        name: name,
+        role: role,
+        color: AGENT_COLORS[colorIdx],
+        welcome: '你好！我是' + name + '，' + role + '。' + (prompt ? '我的工作原则：' + prompt : '有什么需要我帮忙的？'),
+        isPreset: false,
+        customPrompt: prompt
+    };
+
+    customAgents.push(newAgent);
+    localStorage.setItem('ai_custom_agents', JSON.stringify(customAgents));
+    closeCreateAgent();
+    renderAgentsGrid();
+    showToast('智能体「' + name + '」已创建');
+}
+
+// ===== 工作台技能 =====
 function renderSkillsGrid() {
     const grid = document.getElementById('skills-grid');
     grid.innerHTML = PRESET_SKILLS.map(s => `
@@ -264,16 +630,18 @@ function renderTaskList() {
     empty.style.display = 'none';
     list.innerHTML = taskHistory.slice().reverse().map(t => {
         const skill = PRESET_SKILLS.find(s => s.id === t.skillId);
+        const agent = getAllAgents().find(a => 'agent_' + a.id === t.skillId);
+        const icon = skill ? skill.icon : (agent ? agent.icon : '⚡');
         return `
         <div class="bg-white rounded-xl border border-slate-100 p-3 fade-in">
             <div class="flex items-center gap-2 mb-1.5">
-                <span class="text-base">${skill ? skill.icon : '\u26A1'}</span>
+                <span class="text-base">${icon}</span>
                 <span class="text-sm font-medium text-slate-700">${t.skillName}</span>
                 <span class="ml-auto text-xs text-slate-400">${formatTime(t.time)}</span>
             </div>
             <p class="text-xs text-slate-500 line-clamp-2">${t.input || '自动匹配任务'}</p>
             <div class="flex items-center gap-2 mt-2">
-                <span class="text-xs px-2 py-0.5 rounded-full ${t.status === 'success' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}">\u2713 完成</span>
+                <span class="text-xs px-2 py-0.5 rounded-full ${t.status === 'success' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}">✓ 完成</span>
             </div>
         </div>`;
     }).join('');
@@ -289,6 +657,7 @@ function navigateTo(tab) {
     document.getElementById('page-' + tab).classList.add('active');
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     if (tab === 'tasks') renderTaskList();
+    if (tab === 'agents') renderAgentsGrid();
 }
 
 function openSkillDetail(skillId) {
@@ -301,7 +670,7 @@ function openSkillDetail(skillId) {
     `;
     const inputArea = document.getElementById('detail-input-area');
     if (skill.inputType === 'textarea') {
-        inputArea.innerHTML = `<textarea id="skill-input-text" rows="4" placeholder="${skill.placeholder}" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-colors"></textarea>`;
+        inputArea.innerHTML = '<textarea id="skill-input-text" rows="4" placeholder="' + skill.placeholder + '" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-colors"></textarea>';
     } else if (skill.inputType === 'file') {
         inputArea.innerHTML = `
             <div onclick="document.getElementById('skill-file-input').click()" class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors">
@@ -314,7 +683,7 @@ function openSkillDetail(skillId) {
     } else {
         inputArea.innerHTML = `
             <div onclick="document.getElementById('skill-file-input').click()" class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors">
-                <p class="text-sm text-slate-500">\u{1F4CE} 点击上传文件（可选）</p>
+                <p class="text-sm text-slate-500">📎 点击上传文件（可选）</p>
             </div>
             <input type="file" id="skill-file-input" class="hidden" multiple>
             <textarea id="skill-input-text" rows="3" placeholder="${skill.placeholder}" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-colors"></textarea>
@@ -340,7 +709,7 @@ function renderDetailHistory(skillId) {
         <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
             <p class="text-xs text-slate-600 mb-1">${r.input || '文件处理'}</p>
             <div class="flex items-center justify-between">
-                <span class="text-xs text-green-600">\u2713 完成</span>
+                <span class="text-xs text-green-600">✓ 完成</span>
                 <span class="text-xs text-slate-400">${formatTime(r.time)}</span>
             </div>
         </div>
@@ -373,134 +742,17 @@ async function executeSkill() {
 
 function getMockResult(skillId, input) {
     const results = {
-        doc_generator: `<div class="space-y-2">
-            <div class="flex items-center gap-2 mb-3"><span class="text-green-500">\u2713</span><span class="text-sm font-medium text-green-700">文档已生成</span></div>
-            <div class="bg-white rounded-lg p-3 border border-slate-200">
-                <p class="text-xs text-slate-500 mb-2">文档预览：</p>
-                <div class="text-sm text-slate-700 leading-relaxed">
-                    <p class="font-semibold mb-1">${input || '自动生成文档'}</p>
-                    <p class="text-xs text-slate-400">已生成包含标题、正文、表格的完整Word文档...</p>
-                </div>
-            </div>
-            <button class="w-full mt-2 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">\u{1F4E5} 下载文档</button>
-        </div>`,
-        spreadsheet: `<div class="space-y-2">
-            <div class="flex items-center gap-2 mb-3"><span class="text-green-500">\u2713</span><span class="text-sm font-medium text-green-700">表格已处理</span></div>
-            <div class="bg-white rounded-lg p-3 border border-slate-200 overflow-x-auto">
-                <table class="text-xs w-full">
-                    <tr class="bg-slate-50"><th class="px-2 py-1 text-left">项目</th><th class="px-2 py-1 text-right">数值</th></tr>
-                    <tr class="border-t"><td class="px-2 py-1">数据行数</td><td class="px-2 py-1 text-right font-mono">128</td></tr>
-                    <tr class="border-t"><td class="px-2 py-1">公式应用</td><td class="px-2 py-1 text-right font-mono">15</td></tr>
-                    <tr class="border-t"><td class="px-2 py-1">生成图表</td><td class="px-2 py-1 text-right font-mono">3</td></tr>
-                </table>
-            </div>
-            <button class="w-full mt-2 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">\u{1F4E5} 下载Excel</button>
-        </div>`,
-        image_processor: `<div class="space-y-2">
-            <div class="flex items-center gap-2 mb-3"><span class="text-green-500">\u2713</span><span class="text-sm font-medium text-green-700">图片已处理</span></div>
-            <div class="bg-white rounded-lg p-3 border border-slate-200">
-                <div class="w-full h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-sm mb-2">处理后的图片预览</div>
-                <p class="text-xs text-slate-500">已处理 1 张图片 · 格式: PNG · 已添加水印</p>
-            </div>
-            <button class="w-full mt-2 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">\u{1F4E5} 下载图片</button>
-        </div>`,
-        ocr: `<div class="space-y-2">
-            <div class="flex items-center gap-2 mb-3"><span class="text-green-500">\u2713</span><span class="text-sm font-medium text-green-700">文字已识别</span></div>
-            <div class="bg-white rounded-lg p-3 border border-slate-200">
-                <p class="text-xs text-slate-500 mb-2">识别结果：</p>
-                <div class="text-sm text-slate-700 leading-relaxed bg-slate-50 rounded-lg p-3 font-mono text-xs">
-                    ${input ? '识别到文本内容：' + input.substring(0, 50) + '...' : '检测到图片中的文字内容，共计 328 字。识别准确率 98.5%。'}
-                </div>
-            </div>
-            <div class="flex gap-2 mt-2">
-                <button class="flex-1 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">\u{1F4CB} 复制文字</button>
-                <button class="flex-1 text-xs text-slate-500 bg-slate-50 rounded-lg py-2 hover:bg-slate-100 transition-colors">\u{1F4E5} 导出TXT</button>
-            </div>
-        </div>`,
-        data_extractor: `<div class="space-y-2">
-            <div class="flex items-center gap-2 mb-3"><span class="text-green-500">\u2713</span><span class="text-sm font-medium text-green-700">数据已提取</span></div>
-            <div class="bg-white rounded-lg p-3 border border-slate-200 overflow-x-auto">
-                <p class="text-xs text-slate-500 mb-2">结构化数据：</p>
-                <table class="text-xs w-full">
-                    <tr class="bg-slate-50"><th class="px-2 py-1 text-left">字段</th><th class="px-2 py-1 text-left">值</th></tr>
-                    <tr class="border-t"><td class="px-2 py-1">数据表格</td><td class="px-2 py-1">5行 × 3列</td></tr>
-                    <tr class="border-t"><td class="px-2 py-1">数据格式</td><td class="px-2 py-1">JSON / CSV</td></tr>
-                    <tr class="border-t"><td class="px-2 py-1">提取准确率</td><td class="px-2 py-1 text-green-600">97.2%</td></tr>
-                </table>
-            </div>
-            <div class="flex gap-2 mt-2">
-                <button class="flex-1 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">\u{1F4CB} 复制JSON</button>
-                <button class="flex-1 text-xs text-slate-500 bg-slate-50 rounded-lg py-2 hover:bg-slate-100 transition-colors">\u{1F4E5} 导出CSV</button>
-            </div>
-        </div>`,
-        copywriter: `<div class="space-y-2">
-            <div class="flex items-center gap-2 mb-3"><span class="text-green-500">\u2713</span><span class="text-sm font-medium text-green-700">文案已生成</span></div>
-            <div class="bg-white rounded-lg p-3 border border-slate-200">
-                <p class="text-xs text-slate-500 mb-2">生成内容：</p>
-                <div class="text-sm text-slate-700 leading-relaxed">
-                    <p class="mb-2">\u2728 ${input ? '根据\u201c' + (input.length > 20 ? input.substring(0, 20) + '...' : input) + '\u201d生成：' : '为你精心撰写的营销文案：'}</p>
-                    <p class="bg-pink-50 rounded-lg p-2 text-xs leading-relaxed">\u{1F525} 你还在为这个问题发愁吗？<br>\u{1F4A1} 一招解决你的所有烦恼！<br>\u2705 专业团队精心打造<br>\u{1F3AF} 让效率提升 300%<br><br>#好物推荐 #效率工具 #必备神器</p>
-                </div>
-            </div>
-            <button class="w-full mt-2 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">\u{1F4CB} 复制文案</button>
-        </div>`
+        doc_generator: '<div class="space-y-2"><div class="flex items-center gap-2 mb-3"><span class="text-green-500">✓</span><span class="text-sm font-medium text-green-700">文档已生成</span></div><div class="bg-white rounded-lg p-3 border border-slate-200"><p class="text-xs text-slate-500 mb-2">文档预览：</p><div class="text-sm text-slate-700 leading-relaxed"><p class="font-semibold mb-1">' + (input || '自动生成文档') + '</p><p class="text-xs text-slate-400">已生成包含标题、正文、表格的完整Word文档...</p></div></div><button class="w-full mt-2 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">📥 下载文档</button></div>',
+        spreadsheet: '<div class="space-y-2"><div class="flex items-center gap-2 mb-3"><span class="text-green-500">✓</span><span class="text-sm font-medium text-green-700">表格已处理</span></div><div class="bg-white rounded-lg p-3 border border-slate-200 overflow-x-auto"><table class="text-xs w-full"><tr class="bg-slate-50"><th class="px-2 py-1 text-left">项目</th><th class="px-2 py-1 text-right">数值</th></tr><tr class="border-t"><td class="px-2 py-1">数据行数</td><td class="px-2 py-1 text-right font-mono">128</td></tr><tr class="border-t"><td class="px-2 py-1">公式应用</td><td class="px-2 py-1 text-right font-mono">15</td></tr><tr class="border-t"><td class="px-2 py-1">生成图表</td><td class="px-2 py-1 text-right font-mono">3</td></tr></table></div><button class="w-full mt-2 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">📥 下载Excel</button></div>',
+        image_processor: '<div class="space-y-2"><div class="flex items-center gap-2 mb-3"><span class="text-green-500">✓</span><span class="text-sm font-medium text-green-700">图片已处理</span></div><div class="bg-white rounded-lg p-3 border border-slate-200"><div class="w-full h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-sm mb-2">处理后的图片预览</div><p class="text-xs text-slate-500">已处理 1 张图片 · 格式: PNG · 已添加水印</p></div><button class="w-full mt-2 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">📥 下载图片</button></div>',
+        ocr: '<div class="space-y-2"><div class="flex items-center gap-2 mb-3"><span class="text-green-500">✓</span><span class="text-sm font-medium text-green-700">文字已识别</span></div><div class="bg-white rounded-lg p-3 border border-slate-200"><p class="text-xs text-slate-500 mb-2">识别结果：</p><div class="text-sm text-slate-700 leading-relaxed bg-slate-50 rounded-lg p-3 font-mono text-xs">' + (input ? '识别到文本内容：' + input.substring(0, 50) + '...' : '检测到图片中的文字内容，共计 328 字。识别准确率 98.5%。') + '</div></div><div class="flex gap-2 mt-2"><button class="flex-1 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">📋 复制文字</button><button class="flex-1 text-xs text-slate-500 bg-slate-50 rounded-lg py-2 hover:bg-slate-100 transition-colors">📥 导出TXT</button></div></div>',
+        data_extractor: '<div class="space-y-2"><div class="flex items-center gap-2 mb-3"><span class="text-green-500">✓</span><span class="text-sm font-medium text-green-700">数据已提取</span></div><div class="bg-white rounded-lg p-3 border border-slate-200 overflow-x-auto"><p class="text-xs text-slate-500 mb-2">结构化数据：</p><table class="text-xs w-full"><tr class="bg-slate-50"><th class="px-2 py-1 text-left">字段</th><th class="px-2 py-1 text-left">值</th></tr><tr class="border-t"><td class="px-2 py-1">数据表格</td><td class="px-2 py-1">5行 × 3列</td></tr><tr class="border-t"><td class="px-2 py-1">数据格式</td><td class="px-2 py-1">JSON / CSV</td></tr><tr class="border-t"><td class="px-2 py-1">提取准确率</td><td class="px-2 py-1 text-green-600">97.2%</td></tr></table></div><div class="flex gap-2 mt-2"><button class="flex-1 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">📋 复制JSON</button><button class="flex-1 text-xs text-slate-500 bg-slate-50 rounded-lg py-2 hover:bg-slate-100 transition-colors">📥 导出CSV</button></div></div>',
+        copywriter: '<div class="space-y-2"><div class="flex items-center gap-2 mb-3"><span class="text-green-500">✓</span><span class="text-sm font-medium text-green-700">文案已生成</span></div><div class="bg-white rounded-lg p-3 border border-slate-200"><p class="text-xs text-slate-500 mb-2">生成内容：</p><div class="text-sm text-slate-700 leading-relaxed"><p class="mb-2">✨ ' + (input ? '根据「' + (input.length > 20 ? input.substring(0, 20) + '...' : input) + '」生成：' : '为你精心撰写的营销文案：') + '</p><p class="bg-pink-50 rounded-lg p-2 text-xs leading-relaxed">🔥 你还在为这个问题发愁吗？<br>💡 一招解决你的所有烦恼！<br>✅ 专业团队精心打造<br>🎯 让效率提升 300%<br><br>#好物推荐 #效率工具 #必备神器</p></div></div><button class="w-full mt-2 text-xs text-indigo-500 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors">📋 复制文案</button></div>'
     };
     return results[skillId] || '<p class="text-slate-500">处理完成</p>';
 }
 
-function sendChatMessage() {
-    const input = document.getElementById('chat-input');
-    const msg = input.value.trim();
-    if (!msg) return;
-    input.value = '';
-    input.style.height = 'auto';
-    addChatBubble('user', msg);
-    const matchedSkill = matchSkill(msg);
-    setTimeout(() => {
-        addChatBubble('assistant', '正在为你匹配技能...', 'typing');
-        setTimeout(() => {
-            const typingEl = document.querySelector('#chat-messages .typing-msg');
-            if (typingEl) typingEl.remove();
-            if (matchedSkill) {
-                addChatBubble('assistant', `已匹配到「${matchedSkill.name}」技能 \u{1F3AF}<br><span class="text-xs text-indigo-500 cursor-pointer" onclick="openSkillDetail('${matchedSkill.id}');navigateTo('home')">点击使用 \u2192</span>`);
-            } else {
-                addChatBubble('assistant', '我来理解一下你的需求...<br><span class="text-xs text-slate-400">目前支持：文档生成、表格处理、图片处理、OCR识别、数据提取、文案生成</span>');
-            }
-            taskHistory.push({ skillId: matchedSkill ? matchedSkill.id : 'chat', skillName: matchedSkill ? matchedSkill.name : '通用对话', input: msg, time: Date.now(), status: 'success' });
-            localStorage.setItem('ai_task_history', JSON.stringify(taskHistory));
-        }, 800);
-    }, 300);
-}
-
-function addChatBubble(role, content, extraClass) {
-    const c = document.getElementById('chat-messages');
-    const d = document.createElement('div');
-    d.className = 'flex ' + (role === 'user' ? 'justify-end' : 'justify-start') + ' fade-in' + (extraClass === 'typing' ? ' typing-msg' : '');
-    if (role === 'user') {
-        d.innerHTML = '<div class="msg-bubble bg-indigo-500 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">' + escapeHtml(content) + '</div>';
-    } else {
-        d.innerHTML = '<div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm shadow-sm border border-slate-100">' + content + '</div>';
-    }
-    c.appendChild(d);
-    setTimeout(() => c.scrollTop = c.scrollHeight, 50);
-}
-
-function matchSkill(msg) {
-    const keywords = {
-        doc_generator: ['文档', '报告', '合同', 'word', 'pdf', 'markdown', '写作'],
-        spreadsheet: ['表格', 'excel', '数据整理', '公式', '图表', 'xlsx', 'csv'],
-        image_processor: ['图片', '水印', '裁剪', '格式转换', '批量处理', 'resize'],
-        ocr: ['识别', '文字', 'ocr', '图片转文字', '票据', '扫描件'],
-        data_extractor: ['提取', '数据提取', '表格数据', '结构化', '解析'],
-        copywriter: ['文案', '营销', '小红书', '公众号', '推广', '种草', '标题']
-    };
-    const lower = msg.toLowerCase();
-    for (const [skillId, kws] of Object.entries(keywords)) {
-        if (kws.some(k => lower.includes(k))) return PRESET_SKILLS.find(s => s.id === skillId);
-    }
-    return null;
-}
-
+// ===== 工具函数 =====
 function addCustomSlot(index) { showToast('自定义技能功能即将上线'); }
 function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 function formatTime(ts) {
@@ -521,16 +773,7 @@ function clearTasks() {
     renderTaskList();
     showToast('已清空任务记录');
 }
-function triggerFileUpload() { document.getElementById('chat-file-input').click(); }
-function handleFileAttach(e) {
-    const files = e.target.files;
-    if (files.length > 0) {
-        const names = Array.from(files).map(f => f.name).join(', ');
-        addChatBubble('user', '\u{1F4CE} ' + names);
-        setTimeout(() => addChatBubble('assistant', '文件已接收，正在分析...<br><span class="text-xs text-slate-400">即将为你匹配最合适的技能</span>'), 500);
-    }
-    e.target.value = '';
-}
+
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 init();
 </script>
