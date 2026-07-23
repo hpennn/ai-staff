@@ -9,3 +9,4 @@ pypdf2
 python-multipart
 pyautogui
 aiosqlite
+requests
