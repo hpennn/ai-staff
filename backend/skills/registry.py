@@ -131,7 +131,7 @@ class SkillRegistry:
                 id="data_extractor",
                 name="数据提取",
                 icon="📈",
-                description="图片中的表格/数据→结构化输出",
+                description="图片/文本→结构化数据提取",
                 input_type="file",
                 output_type="structured",
                 handler=data_extractor.execute,

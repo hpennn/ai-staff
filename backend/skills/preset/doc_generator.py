@@ -16,10 +16,13 @@ SKILL_META = {
 
 async def execute(input_data: dict) -> dict:
     """
-    输入: {"prompt": "要生成什么文档", "format": "md/docx/pdf", "style": "正式/简洁"}
+    输入: {"text": "要生成什么文档", "format": "md/docx/pdf", "style": "正式/简洁"}
     输出: {"content": "文档内容", "file_url": "下载链接", "format": "md"}
+    
+    兼容前端：从 input_data["text"] 读取 prompt
     """
-    prompt = input_data.get("prompt", "")
+    # 兼容前端：text 字段作为 prompt
+    prompt = input_data.get("prompt", "") or input_data.get("text", "")
     fmt = input_data.get("format", "md")
     style = input_data.get("style", "正式")
     
@@ -35,6 +38,9 @@ async def execute(input_data: dict) -> dict:
         {"role": "user", "content": user_msg}
     ], max_tokens=4000)
     
+    if content.startswith("[LLM未配置]"):
+        return {"error": content}
+    
     # 保存文件
     filename = f"doc_{int(time.time())}.{fmt}"
     filepath = os.path.join(os.path.dirname(__file__), "../../static/downloads", filename)
@@ -45,9 +51,10 @@ async def execute(input_data: dict) -> dict:
             f.write(content)
     elif fmt in ("docx", "pdf"):
         # 先保存md，后续可转换为docx/pdf
-        with open(filepath.replace(f".{fmt}", ".md"), "w", encoding="utf-8") as f:
+        md_filepath = filepath.replace(f".{fmt}", ".md")
+        with open(md_filepath, "w", encoding="utf-8") as f:
             f.write(content)
-        filepath = filepath.replace(f".{fmt}", ".md")
+        filepath = md_filepath
     
     return {
         "content": content,

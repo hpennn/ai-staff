@@ -1093,11 +1093,12 @@ function openSkillDetail(skillId) {
     `;
     const inputArea = document.getElementById('detail-input-area');
     if (skill.inputType === 'textarea') {
-        inputArea.innerHTML = '<textarea id="skill-input-text" rows="4" placeholder="' + skill.placeholder + '" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-all bg-slate-50 focus:bg-white"></textarea>';
+        const extraOpts = skill.id === 'doc_generator' ? '<div class="flex gap-2 mt-2"><select id="skill-format" class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-slate-50 focus:bg-white"><option value="md">Markdown</option><option value="docx">Word</option><option value="pdf">PDF</option></select><select id="skill-style" class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-slate-50 focus:bg-white"><option value="正式">正式</option><option value="简洁">简洁</option><option value="学术">学术</option><option value="商务">商务</option></select></div>' : '';
+        inputArea.innerHTML = '<textarea id="skill-input-text" rows="4" placeholder="' + skill.placeholder + '" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-all bg-slate-50 focus:bg-white"></textarea>' + extraOpts;
     } else if (skill.inputType === 'file') {
-        inputArea.innerHTML = `<div onclick="document.getElementById('skill-file-input').click()" class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all"><svg class="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><p class="text-sm text-slate-500">点击上传文件</p><p class="text-xs text-slate-400 mt-1">支持图片、PDF等格式</p></div><input type="file" id="skill-file-input" class="hidden" multiple>`;
+        inputArea.innerHTML = `<div onclick="document.getElementById('skill-file-input').click()" id="skill-file-drop" class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all"><svg class="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><p class="text-sm text-slate-500">点击上传文件</p><p class="text-xs text-slate-400 mt-1">支持图片、PDF等格式</p><p id="skill-file-names" class="text-xs text-indigo-600 mt-2 hidden"></p></div><input type="file" id="skill-file-input" class="hidden" accept="image/*,.pdf" multiple onchange="onSkillFileSelected(this)">`;
     } else {
-        inputArea.innerHTML = `<div onclick="document.getElementById('skill-file-input').click()" class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all"><p class="text-sm text-slate-500">📎 点击上传文件（可选）</p></div><input type="file" id="skill-file-input" class="hidden" multiple><textarea id="skill-input-text" rows="3" placeholder="${skill.placeholder}" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-all bg-slate-50 focus:bg-white"></textarea>`;
+        inputArea.innerHTML = `<div onclick="document.getElementById('skill-file-input').click()" class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all"><p class="text-sm text-slate-500">📎 点击上传文件（可选）</p><p id="skill-file-names" class="text-xs text-indigo-600 mt-1 hidden"></p></div><input type="file" id="skill-file-input" class="hidden" accept="image/*,.pdf,.xlsx,.xls,.csv,.docx" multiple onchange="onSkillFileSelected(this)"><textarea id="skill-input-text" rows="3" placeholder="${skill.placeholder}" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-all bg-slate-50 focus:bg-white"></textarea>`;
     }
     document.getElementById('detail-result-area').classList.add('hidden');
     renderDetailHistory(skillId);
@@ -1105,21 +1106,64 @@ function openSkillDetail(skillId) {
 }
 function closeSkillDetail() { document.getElementById('skill-detail').classList.remove('active'); currentSkillId = null; }
 
+function onSkillFileSelected(input) {
+    const namesEl = document.getElementById('skill-file-names');
+    if (input.files && input.files.length > 0) {
+        const names = Array.from(input.files).map(f => f.name).join(', ');
+        if (namesEl) {
+            namesEl.textContent = '已选择: ' + names;
+            namesEl.classList.remove('hidden');
+        }
+    } else {
+        if (namesEl) namesEl.classList.add('hidden');
+    }
+}
+
 async function executeSkill() {
     if (!currentSkillId) return;
     const skill = PRESET_SKILLS.find(s => s.id === currentSkillId);
     const btn = document.getElementById('detail-exec-btn');
     const textInput = document.getElementById('skill-input-text');
+    const fileInput = document.getElementById('skill-file-input');
     const inputText = textInput ? textInput.value.trim() : '';
+    const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
     btn.disabled = true;
     btn.innerHTML = '<span class="inline-flex items-center gap-1.5"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span> 处理中...';
 
     try {
-        const resp = await fetch(API_BASE + '/skills/' + skill.id + '/execute', {
-            method: 'POST',
-            headers: authHeaders(),
-            body: JSON.stringify({ text: inputText || skill.desc, user_id: DEVICE_ID })
-        });
+        let resp;
+        if (hasFiles) {
+            // 文件上传：使用FormData
+            const formData = new FormData();
+            formData.append('text', inputText || skill.desc);
+            formData.append('user_id', DEVICE_ID);
+            const formatSel = document.getElementById('skill-format');
+            const styleSel = document.getElementById('skill-style');
+            if (formatSel) formData.append('format', formatSel.value);
+            if (styleSel) formData.append('style', styleSel.value);
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('files', fileInput.files[i]);
+            }
+            const headers = {};
+            if (AUTH_TOKEN) headers['Authorization'] = 'Bearer ' + AUTH_TOKEN;
+            resp = await fetch(API_BASE + '/skills/' + skill.id + '/execute', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            });
+        } else {
+            // 无文件：使用JSON
+            resp = await fetch(API_BASE + '/skills/' + skill.id + '/execute', {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ 
+                text: inputText || skill.desc, 
+                user_id: DEVICE_ID,
+                format: document.getElementById('skill-format')?.value || undefined,
+                style: document.getElementById('skill-style')?.value || undefined
+            })
+            });
+        }
         if (resp.status === 402) {
             const errData = await resp.json();
             const detail = errData.detail || {};
@@ -1155,10 +1199,21 @@ async function executeSkill() {
 }
 
 function formatSkillResult(data) {
-    if (data.error) return '<p class="text-red-500">' + escapeHtml(data.error) + '</p>';
+    if (data.error) return '<p class="text-red-500 text-sm">' + escapeHtml(data.error) + '</p>';
+    // 优先使用content字段（各skill handler返回的格式化内容）
+    if (data.output && typeof data.output === 'object') {
+        const out = data.output;
+        if (out.error) return '<p class="text-red-500 text-sm">' + escapeHtml(out.error) + '</p>';
+        if (out.content) return '<div class="markdown-content">' + formatMarkdown(out.content) + '</div>';
+        if (out.message) return '<div class="markdown-content"><p class="text-slate-600">' + formatMarkdown(out.message) + '</p></div>';
+        if (out.file_url) return '<div class="markdown-content"><p class="text-green-600 font-medium mb-2">✅ 处理完成</p><p class="text-sm"><a href="' + out.file_url + '" target="_blank" class="text-indigo-600 underline">📥 下载结果文件</a></p>' + (out.info ? '<p class="text-xs text-slate-500 mt-1">' + escapeHtml(out.info) + '</p>' : '') + '</div>';
+        if (out.text) return '<div class="markdown-content">' + formatMarkdown(out.text) + '</div>';
+        if (out.data) return '<div class="markdown-content"><pre class="text-xs bg-slate-50 p-3 rounded-lg overflow-auto">' + escapeHtml(JSON.stringify(out.data, null, 2)) + '</pre></div>';
+        return '<div class="markdown-content"><p class="text-green-600 font-medium mb-2">✅ 执行成功</p><pre class="text-xs bg-slate-50 p-3 rounded-lg overflow-auto">' + escapeHtml(JSON.stringify(out, null, 2)) + '</pre></div>';
+    }
     if (data.result) return '<div class="markdown-content">' + formatMarkdown(typeof data.result === 'string' ? data.result : JSON.stringify(data.result, null, 2)) + '</div>';
     if (data.output) return '<div class="markdown-content">' + formatMarkdown(data.output) + '</div>';
-    return '<div class="markdown-content"><p class="text-green-600 font-medium mb-2">✅ 执行成功</p><pre class="text-xs">' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre></div>';
+    return '<div class="markdown-content"><p class="text-green-600 font-medium mb-2">✅ 执行成功</p><pre class="text-xs bg-slate-50 p-3 rounded-lg overflow-auto">' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre></div>';
 }
 
 function renderDetailHistory(skillId) {
