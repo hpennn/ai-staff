@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ai-staff-v3';
+const CACHE_NAME = 'ai-staff-v4';
 const STATIC_CACHE = [
   '/manifest.json',
   '/icons/icon-192.png',
