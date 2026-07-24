@@ -991,6 +991,7 @@ async function sendAgentMessage() {
                 user_id: DEVICE_ID
             })
         });
+        console.log('[executeSkill] Response status:', resp.status);
         if (resp.status === 402) {
             const errData = await resp.json();
             const detail = errData.detail || {};
@@ -1142,6 +1143,12 @@ async function executeSkill() {
     const fileInput = document.getElementById('skill-file-input');
     const inputText = textInput ? textInput.value.trim() : '';
     const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
+    console.log('[executeSkill] skillId:', currentSkillId, 'hasFiles:', hasFiles, 'fileCount:', fileInput?.files?.length);
+    if (hasFiles) {
+        for (let i = 0; i < fileInput.files.length; i++) {
+            console.log('[executeSkill] file[' + i + ']:', fileInput.files[i].name, fileInput.files[i].size, 'bytes, type:', fileInput.files[i].type);
+        }
+    }
     btn.disabled = true;
     btn.innerHTML = '<span class="inline-flex items-center gap-1.5"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span> 处理中...';
 
