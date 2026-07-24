@@ -175,16 +175,16 @@ async def execute_skill(
         style = form.get("style")
         user_id = form.get("user_id", "") or ""
         
-        # 收集文件
+        # 收集文件 - 使用属性检测而非 isinstance，避免类型判断失败
         file_list = []
         for key, value in form.multi_items():
-            if isinstance(value, UploadFile) and value.filename:
+            if key == 'files' and hasattr(value, 'filename') and value.filename and hasattr(value, 'read'):
+                logger.warning(f"[DEBUG] Found file: key={key}, filename={value.filename}, type={type(value).__name__}, module={type(value).__module__}")
                 file_list.append(value)
         
         logger.warning(f"[DEBUG] form items count: {len(form.multi_items())}, file_list count: {len(file_list)}")
         for _k, _v in form.multi_items():
-            if isinstance(_v, UploadFile):
-                logger.warning(f"[DEBUG] UploadFile: key={_k}, filename={_v.filename}, ct={_v.content_type}")
+            logger.warning(f"[DEBUG] form item: key={_k}, type={type(_v).__name__}, value_preview={str(_v)[:100]}")
         if file_list:
             saved_files = await _save_upload_files(file_list)
             logger.warning(f"[DEBUG] saved_files count: {len(saved_files)}")
