@@ -165,6 +165,7 @@ async def execute_skill(
     files = None
     saved_files = []
     
+    logger.warning(f"[DEBUG] execute_skill: content_type='{content_type}', skill_id={skill_id}")
     if "multipart/form-data" in content_type:
         # FormData格式：读取表单字段和文件
         form = await fastapi_request.form()
@@ -180,8 +181,13 @@ async def execute_skill(
             if isinstance(value, UploadFile) and value.filename:
                 file_list.append(value)
         
+        logger.warning(f"[DEBUG] form items count: {len(form.multi_items())}, file_list count: {len(file_list)}")
+        for _k, _v in form.multi_items():
+            if isinstance(_v, UploadFile):
+                logger.warning(f"[DEBUG] UploadFile: key={_k}, filename={_v.filename}, ct={_v.content_type}")
         if file_list:
             saved_files = await _save_upload_files(file_list)
+            logger.warning(f"[DEBUG] saved_files count: {len(saved_files)}")
     else:
         # JSON格式
         try:
@@ -219,6 +225,7 @@ async def execute_skill(
             input_data["image_base64"] = first_image["base64"]
             input_data["image_data_uri"] = first_image["data_uri"]
 
+    logger.warning(f"[DEBUG] input_data keys: {list(input_data.keys())}, has_image_data_uri={bool(input_data.get('image_data_uri'))}, has_files={bool(input_data.get('files'))}")
     try:
         result = await engine.execute(skill_id, input_data)
     finally:
