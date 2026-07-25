@@ -72,6 +72,12 @@ class SkillRegistry:
             "ocr": ["识别", "文字", "ocr", "图片转文字", "票据", "扫描件", "读图"],
             "data_extractor": ["提取", "数据提取", "表格数据", "结构化", "解析", "抽取"],
             "copywriter": ["文案", "营销", "小红书", "公众号", "推广", "种草", "标题", "内容"],
+            "translator": ["翻译", "translate", "多语言", "中英", "英文", "日文", "韩文", "翻译一下"],
+            "email_writer": ["邮件", "email", "写信", "回复邮件", "商务邮件"],
+            "meeting_notes": ["会议", "纪要", "会议记录", "会议总结", "meeting"],
+            "ppt_outline": ["ppt", "演示", "幻灯片", "大纲", "presentation"],
+            "contract_review": ["合同审查", "合同审核", "风险", "条款审查", "合同风险"],
+            "data_cleaner": ["数据清洗", "去重", "空值", "异常值", "clean", "清洗数据"],
         }
         text_lower = text.lower()
         for skill_id, keywords in keyword_map.items():
@@ -85,6 +91,8 @@ class SkillRegistry:
         """加载所有预置技能"""
         from skills.preset import doc_generator, spreadsheet, image_processor
         from skills.preset import ocr_skill, data_extractor, copywriter
+        from skills.preset import translator_skill, email_writer, meeting_notes
+        from skills.preset import ppt_outline, contract_review, data_cleaner
 
         preset_skills = [
             SkillMeta(
@@ -146,6 +154,67 @@ class SkillRegistry:
                 output_type="text",
                 handler=copywriter.execute,
                 tags=["文案", "营销", "小红书", "公众号", "推广", "种草"],
+            ),
+            # === 新增6个办公技能 ===
+            SkillMeta(
+                id="translator",
+                name="翻译",
+                icon="🌐",
+                description="多语言互译、文档翻译",
+                input_type="file+text",
+                output_type="text",
+                handler=translator_skill.execute,
+                tags=["翻译", "多语言", "translate", "中英", "日文", "韩文"],
+            ),
+            SkillMeta(
+                id="email_writer",
+                name="邮件助手",
+                icon="📧",
+                description="根据描述生成邮件正文",
+                input_type="textarea",
+                output_type="text",
+                handler=email_writer.execute,
+                tags=["邮件", "email", "写信", "商务邮件"],
+            ),
+            SkillMeta(
+                id="meeting_notes",
+                name="会议纪要",
+                icon="📝",
+                description="会议内容整理为结构化纪要",
+                input_type="file+text",
+                output_type="text",
+                handler=meeting_notes.execute,
+                tags=["会议", "纪要", "会议记录", "待办"],
+            ),
+            SkillMeta(
+                id="ppt_outline",
+                name="PPT大纲",
+                icon="📑",
+                description="生成完整PPT结构与大纲",
+                input_type="textarea",
+                output_type="text",
+                handler=ppt_outline.execute,
+                tags=["PPT", "演示", "幻灯片", "大纲", "presentation"],
+            ),
+            SkillMeta(
+                id="contract_review",
+                name="合同审查",
+                icon="🛡️",
+                description="合同条款提取与风险识别",
+                input_type="file",
+                output_type="text",
+                handler=contract_review.execute,
+                tags=["合同", "审查", "风险", "条款", "法律"],
+            ),
+            SkillMeta(
+                id="data_cleaner",
+                name="数据清洗",
+                icon="🧪",
+                description="数据去重、格式统一、异常检测",
+                input_type="file",
+                output_type="text",
+                handler=data_cleaner.execute,
+                tags=["数据清洗", "去重", "空值", "异常值", "csv"],
             ),
         ]
 
