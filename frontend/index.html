@@ -225,11 +225,14 @@
             </div>
             <!-- Recent Credit Logs -->
             <div class="mx-4 mb-4">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-sm font-semibold text-slate-700">积分记录</h3>
-                    <button onclick="refreshCredits()" class="text-xs text-indigo-500 hover:text-indigo-600">刷新</button>
+                <div class="flex items-center justify-between mb-2 cursor-pointer select-none" onclick="toggleCreditLogs()">
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="text-sm font-semibold text-slate-700">积分记录</h3>
+                        <svg id="credit-toggle-icon" class="w-3.5 h-3.5 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <button onclick="event.stopPropagation(); refreshCredits()" class="text-xs text-indigo-500 hover:text-indigo-600">刷新</button>
                 </div>
-                <div id="credit-logs" class="space-y-2">
+                <div id="credit-logs" class="space-y-2 hidden">
                     <p class="text-xs text-slate-400 text-center py-4">加载中...</p>
                 </div>
             </div>
@@ -678,6 +681,20 @@ function renderCreditLogs(logs) {
             '<div class="flex-1 min-w-0"><p class="text-xs text-slate-700 truncate">' + escapeHtml(log.description || typeLabel) + '</p><p class="text-[10px] text-slate-400">' + time + '</p></div>' +
             '<span class="text-sm font-semibold ' + amountColor + ' ml-3">' + amountPrefix + log.amount + '</span></div>';
     }).join('');
+}
+
+let creditLogsExpanded = false;
+function toggleCreditLogs() {
+    creditLogsExpanded = !creditLogsExpanded;
+    const logs = document.getElementById('credit-logs');
+    const icon = document.getElementById('credit-toggle-icon');
+    if (creditLogsExpanded) {
+        logs.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        logs.classList.add('hidden');
+        icon.style.transform = 'rotate(0deg)';
+    }
 }
 
 function refreshCredits() {
