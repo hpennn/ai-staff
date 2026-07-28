@@ -111,6 +111,37 @@
             </button>
         </div>
         <div class="flex-1 overflow-y-auto px-4 py-4">
+            <!-- 最近使用 -->
+            <div id="recent-skills-section" class="mb-5 hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">最近使用</h2>
+                </div>
+                <div id="recent-skills-grid" class="flex gap-2.5 overflow-x-auto pb-1"></div>
+            </div>
+            <!-- 快捷操作 -->
+            <div class="mb-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">快捷操作</h2>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="quickAction('doc_generator','请帮我生成本周工作周报')" class="flex items-center gap-2.5 bg-white rounded-xl border border-slate-100 px-3.5 py-3 text-left hover:shadow-md hover:border-indigo-100/80 transition-all active:scale-[0.98]">
+                        <span class="text-lg">📄</span>
+                        <div><p class="text-xs font-semibold text-slate-700">生成周报</p><p class="text-[10px] text-slate-400">文档生成</p></div>
+                    </button>
+                    <button onclick="quickAction('spreadsheet','请帮我整理以下数据')" class="flex items-center gap-2.5 bg-white rounded-xl border border-slate-100 px-3.5 py-3 text-left hover:shadow-md hover:border-indigo-100/80 transition-all active:scale-[0.98]">
+                        <span class="text-lg">📊</span>
+                        <div><p class="text-xs font-semibold text-slate-700">数据整理</p><p class="text-[10px] text-slate-400">表格处理</p></div>
+                    </button>
+                    <button onclick="quickAction('image_processor','')" class="flex items-center gap-2.5 bg-white rounded-xl border border-slate-100 px-3.5 py-3 text-left hover:shadow-md hover:border-indigo-100/80 transition-all active:scale-[0.98]">
+                        <span class="text-lg">🖼️</span>
+                        <div><p class="text-xs font-semibold text-slate-700">批量加水印</p><p class="text-[10px] text-slate-400">图片处理</p></div>
+                    </button>
+                    <button onclick="quickAction('copywriter','')" class="flex items-center gap-2.5 bg-white rounded-xl border border-slate-100 px-3.5 py-3 text-left hover:shadow-md hover:border-indigo-100/80 transition-all active:scale-[0.98]">
+                        <span class="text-lg">✍️</span>
+                        <div><p class="text-xs font-semibold text-slate-700">写营销文案</p><p class="text-[10px] text-slate-400">文案生成</p></div>
+                    </button>
+                </div>
+            </div>
             <div class="mb-5">
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">预置技能</h2>
@@ -191,7 +222,11 @@
                     <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
                 <p class="text-sm text-slate-500 font-medium">还没有任务记录</p>
-                <p class="text-xs text-slate-400 mt-1">使用技能或智能体后会自动记录</p>
+                <p class="text-xs text-slate-400 mt-1 mb-4">使用技能或智能体后会自动记录</p>
+                <div class="flex gap-2">
+                    <button onclick="navigateTo('home')" class="text-xs font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-2 rounded-full shadow-sm active:scale-95 transition-all">去使用技能</button>
+                    <button onclick="navigateTo('agents')" class="text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-full transition-all">找智能体聊聊</button>
+                </div>
             </div>
         </div>
     </div>
@@ -407,18 +442,18 @@ const API_BASE = '/api';
 
 // ===== 数据 =====
 const PRESET_SKILLS = [
-    { id: 'doc_generator', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', name: '文档生成', desc: 'Word/PDF/Markdown自动生成', color: 'from-blue-500 to-indigo-600', bgLight: 'bg-blue-50', textColor: 'text-blue-600', inputType: 'textarea', placeholder: '描述你要生成的文档内容...', tags: ['文档', '报告'] },
-    { id: 'spreadsheet', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>', name: '表格处理', desc: 'Excel数据整理、公式、图表', color: 'from-emerald-500 to-green-600', bgLight: 'bg-emerald-50', textColor: 'text-emerald-600', inputType: 'file+text', placeholder: '上传Excel或描述数据需求...', tags: ['表格', '数据'] },
-    { id: 'image_processor', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>', name: '图片处理', desc: '批量加水印、裁剪、格式转换', color: 'from-pink-500 to-rose-600', bgLight: 'bg-pink-50', textColor: 'text-pink-600', inputType: 'file', placeholder: '上传图片进行批量处理...', tags: ['图片', '设计'] },
-    { id: 'ocr', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>', name: 'OCR识别', desc: '图片转文字、票据识别', color: 'from-amber-500 to-orange-600', bgLight: 'bg-amber-50', textColor: 'text-amber-600', inputType: 'file', placeholder: '上传图片进行文字识别...', tags: ['识别', '文字'] },
-    { id: 'data_extractor', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>', name: '数据提取', desc: '图片中的表格数据转结构化', color: 'from-violet-500 to-purple-600', bgLight: 'bg-violet-50', textColor: 'text-violet-600', inputType: 'file', placeholder: '上传包含数据/表格的图片...', tags: ['数据', '提取'] },
-    { id: 'copywriter', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>', name: '文案生成', desc: '营销文案、公众号、小红书', color: 'from-cyan-500 to-teal-600', bgLight: 'bg-cyan-50', textColor: 'text-cyan-600', inputType: 'textarea', placeholder: '描述文案需求，如产品/风格/平台...', tags: ['文案', '营销'] },
-    { id: 'translator', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>', name: '翻译', desc: '多语言互译、文档翻译', color: 'from-sky-500 to-blue-600', bgLight: 'bg-sky-50', textColor: 'text-sky-600', inputType: 'file+text', placeholder: '输入要翻译的内容或上传文件...', tags: ['翻译', '多语言'] },
-    { id: 'email_writer', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>', name: '邮件助手', desc: '根据描述生成邮件正文', color: 'from-indigo-500 to-blue-600', bgLight: 'bg-indigo-50', textColor: 'text-indigo-600', inputType: 'textarea', placeholder: '描述邮件内容需求，如：给客户的报价邮件...', tags: ['邮件', '写作'] },
-    { id: 'meeting_notes', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>', name: '会议纪要', desc: '会议内容整理为结构化纪要', color: 'from-teal-500 to-cyan-600', bgLight: 'bg-teal-50', textColor: 'text-teal-600', inputType: 'file+text', placeholder: '粘贴会议内容或上传会议记录文件...', tags: ['会议', '纪要'] },
-    { id: 'ppt_outline', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>', name: 'PPT大纲', desc: '生成完整PPT结构与大纲', color: 'from-orange-500 to-red-600', bgLight: 'bg-orange-50', textColor: 'text-orange-600', inputType: 'textarea', placeholder: '描述PPT主题，如：10页产品发布会PPT...', tags: ['PPT', '大纲'] },
-    { id: 'contract_review', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>', name: '合同审查', desc: '合同条款提取与风险识别', color: 'from-red-500 to-rose-600', bgLight: 'bg-red-50', textColor: 'text-red-600', inputType: 'file', placeholder: '上传合同文档进行审查...', tags: ['合同', '审查'] },
-    { id: 'data_cleaner', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>', name: '数据清洗', desc: '数据去重、格式统一、异常检测', color: 'from-green-500 to-emerald-600', bgLight: 'bg-green-50', textColor: 'text-green-600', inputType: 'file', placeholder: '上传CSV/Excel文件进行数据清洗...', tags: ['数据', '清洗'] }
+    { id: 'doc_generator', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', name: '文档生成', desc: 'Word/PDF/Markdown自动生成', color: 'from-blue-500 to-indigo-600', bgLight: 'bg-blue-50', textColor: 'text-blue-600', inputType: 'textarea', placeholder: '描述你要生成的文档内容...', tags: ['文档', '报告'], tips: '支持 Markdown / Word / PDF 格式输出。在输入框中详细描述文档需求，可选择输出格式和风格。例："请帮我写一份项目进展报告，包含本周完成事项和下周计划"' },
+    { id: 'spreadsheet', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>', name: '表格处理', desc: 'Excel数据整理、公式、图表', color: 'from-emerald-500 to-green-600', bgLight: 'bg-emerald-50', textColor: 'text-emerald-600', inputType: 'file+text', placeholder: '上传Excel或描述数据需求...', tags: ['表格', '数据'], tips: '支持上传 Excel/CSV 文件进行数据整理。也可直接描述数据需求，如汇总、求平均、排序等。上传后请说明需要如何处理数据。' },
+    { id: 'image_processor', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>', name: '图片处理', desc: '批量加水印、裁剪、格式转换', color: 'from-pink-500 to-rose-600', bgLight: 'bg-pink-50', textColor: 'text-pink-600', inputType: 'file', placeholder: '上传图片进行批量处理...', tags: ['图片', '设计'], tips: '点击上传区域选择图片，支持批量操作。可指定水印文字、裁剪尺寸、目标格式等。支持 JPG、PNG、WebP 等常见格式。' },
+    { id: 'ocr', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>', name: 'OCR识别', desc: '图片转文字、票据识别', color: 'from-amber-500 to-orange-600', bgLight: 'bg-amber-50', textColor: 'text-amber-600', inputType: 'file', placeholder: '上传图片进行文字识别...', tags: ['识别', '文字'], tips: '上传包含文字的图片即可自动识别。支持手写体、印刷体、票据等多种场景。图片越清晰识别效果越好。' },
+    { id: 'data_extractor', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>', name: '数据提取', desc: '图片中的表格数据转结构化', color: 'from-violet-500 to-purple-600', bgLight: 'bg-violet-50', textColor: 'text-violet-600', inputType: 'file', placeholder: '上传包含数据/表格的图片...', tags: ['数据', '提取'], tips: '上传包含表格数据的图片（如截图、照片），自动提取为结构化数据。支持导出为 Excel 格式。' },
+    { id: 'copywriter', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>', name: '文案生成', desc: '营销文案、公众号、小红书', color: 'from-cyan-500 to-teal-600', bgLight: 'bg-cyan-50', textColor: 'text-cyan-600', inputType: 'textarea', placeholder: '描述文案需求，如产品/风格/平台...', tags: ['文案', '营销'], tips: '描述产品/服务信息和文案需求，注明目标平台（小红书/公众号/朋友圈等）和期望风格（种草/测评/正式等）。' },
+    { id: 'translator', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>', name: '翻译', desc: '多语言互译、文档翻译', color: 'from-sky-500 to-blue-600', bgLight: 'bg-sky-50', textColor: 'text-sky-600', inputType: 'file+text', placeholder: '输入要翻译的内容或上传文件...', tags: ['翻译', '多语言'], tips: '支持中/英/日/韩/法/德/西等多语言互译。可上传文档翻译，也可直接输入文字。指定目标语言效果更佳。' },
+    { id: 'email_writer', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>', name: '邮件助手', desc: '根据描述生成邮件正文', color: 'from-indigo-500 to-blue-600', bgLight: 'bg-indigo-50', textColor: 'text-indigo-600', inputType: 'textarea', placeholder: '描述邮件内容需求，如：给客户的报价邮件...', tags: ['邮件', '写作'], tips: '描述邮件场景和要点，如收件人身份、核心内容、期望语气等。支持商务、正式、友好等多种风格。' },
+    { id: 'meeting_notes', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>', name: '会议纪要', desc: '会议内容整理为结构化纪要', color: 'from-teal-500 to-cyan-600', bgLight: 'bg-teal-50', textColor: 'text-teal-600', inputType: 'file+text', placeholder: '粘贴会议内容或上传会议记录文件...', tags: ['会议', '纪要'], tips: '粘贴会议记录原文或上传会议录音转写文件，自动整理为结构化纪要，包含议题、结论、待办事项。' },
+    { id: 'ppt_outline', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>', name: 'PPT大纲', desc: '生成完整PPT结构与大纲', color: 'from-orange-500 to-red-600', bgLight: 'bg-orange-50', textColor: 'text-orange-600', inputType: 'textarea', placeholder: '描述PPT主题，如：10页产品发布会PPT...', tags: ['PPT', '大纲'], tips: '输入 PPT 主题和页数要求，生成完整的章节结构和每页内容要点。可据此快速制作演示文稿。' },
+    { id: 'contract_review', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>', name: '合同审查', desc: '合同条款提取与风险识别', color: 'from-red-500 to-rose-600', bgLight: 'bg-red-50', textColor: 'text-red-600', inputType: 'file', placeholder: '上传合同文档进行审查...', tags: ['合同', '审查'], tips: '上传合同 PDF/Word 文档，自动提取关键条款并识别潜在风险点。仅供参考，不构成法律意见。' },
+    { id: 'data_cleaner', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>', name: '数据清洗', desc: '数据去重、格式统一、异常检测', color: 'from-green-500 to-emerald-600', bgLight: 'bg-green-50', textColor: 'text-green-600', inputType: 'file', placeholder: '上传CSV/Excel文件进行数据清洗...', tags: ['数据', '清洗'], tips: '上传 CSV/Excel 文件，自动进行去重、缺失值处理、格式统一和异常值检测。处理前请确认数据无敏感信息。' }
 ];
 
 const DEFAULT_AGENTS = [
@@ -789,6 +824,7 @@ function init() {
     renderTaskList();
     renderAgentsGrid();
     loadSkillHistory();
+    renderRecentSkills();
     updateUsageCount();
     checkAuth(); // Check login state and update UI
     fetchCredits(); // Load credits on init
@@ -796,6 +832,44 @@ function init() {
 
 function getAllAgents() { return [...DEFAULT_AGENTS, ...customAgents]; }
 function updateUsageCount() { document.getElementById('usage-count').textContent = taskHistory.length; }
+
+// ===== 最近使用渲染 =====
+function renderRecentSkills() {
+    const section = document.getElementById('recent-skills-section');
+    const grid = document.getElementById('recent-skills-grid');
+    // Collect all skill usage with timestamps
+    let usages = [];
+    for (const [sid, records] of Object.entries(skillHistory)) {
+        if (records && records.length > 0) {
+            const lastRecord = records[records.length - 1];
+            usages.push({ skillId: sid, time: lastRecord.time, input: lastRecord.input });
+        }
+    }
+    // Sort by time desc, take top 3
+    usages.sort((a, b) => b.time - a.time);
+    const recent = usages.slice(0, 3);
+    if (recent.length === 0) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+    grid.innerHTML = recent.map(u => {
+        const skill = PRESET_SKILLS.find(s => s.id === u.skillId);
+        if (!skill) return '';
+        return `<button onclick="openSkillDetail('${u.skillId}')" class="flex-shrink-0 flex items-center gap-2 bg-white rounded-xl border border-slate-100 px-3 py-2.5 hover:shadow-md hover:border-indigo-100/80 transition-all active:scale-[0.97]">
+            <div class="w-7 h-7 bg-gradient-to-br ${skill.color} rounded-lg flex items-center justify-center text-white flex-shrink-0">${skill.icon}</div>
+            <div class="text-left"><p class="text-xs font-medium text-slate-700 whitespace-nowrap">${skill.name}</p><p class="text-[10px] text-slate-400">${formatTime(u.time)}</p></div>
+        </button>`;
+    }).join('');
+}
+
+// ===== 快捷操作 =====
+function quickAction(skillId, prefillText) {
+    openSkillDetail(skillId);
+    if (prefillText) {
+        setTimeout(() => {
+            const textarea = document.getElementById('skill-input-text');
+            if (textarea) { textarea.value = prefillText; textarea.focus(); }
+        }, 100);
+    }
+}
 
 // ===== 技能渲染 =====
 function renderSkillsGrid() {
@@ -1059,6 +1133,7 @@ function saveAgentChats() { localStorage.setItem('ai_agent_chats', JSON.stringif
 
 function clearAgentChat() {
     if (!currentAgentId) return;
+    if (!confirm('确定要清空当前对话记录吗？此操作不可恢复。')) return;
     agentChats[currentAgentId] = [];
     saveAgentChats();
     const agent = getAllAgents().find(a => a.id === currentAgentId);
@@ -1118,12 +1193,38 @@ function openSkillDetail(skillId) {
     const inputArea = document.getElementById('detail-input-area');
     if (skill.inputType === 'textarea') {
         const extraOpts = skill.id === 'doc_generator' ? '<div class="flex gap-2 mt-2"><select id="skill-format" class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-slate-50 focus:bg-white"><option value="md">Markdown</option><option value="docx">Word</option><option value="pdf">PDF</option></select><select id="skill-style" class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-slate-50 focus:bg-white"><option value="正式">正式</option><option value="简洁">简洁</option><option value="学术">学术</option><option value="商务">商务</option></select></div>' : '';
-        inputArea.innerHTML = '<textarea id="skill-input-text" rows="4" placeholder="' + skill.placeholder + '" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-all bg-slate-50 focus:bg-white"></textarea>' + extraOpts;
+        inputArea.innerHTML = '<div class="text-xs text-indigo-500 bg-indigo-50/50 rounded-lg px-3 py-2 mb-2 flex items-start gap-1.5"><span class="flex-shrink-0 mt-0.5">💡</span><span>' + (skill.tips || '').substring(0, 60) + '...</span></div><textarea id="skill-input-text" rows="4" placeholder="' + skill.placeholder + '" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-all bg-slate-50 focus:bg-white"></textarea>' + extraOpts;
     } else if (skill.inputType === 'file') {
         inputArea.innerHTML = `<div onclick="document.getElementById('skill-file-input').click()" id="skill-file-drop" class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all"><svg class="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><p class="text-sm text-slate-500">点击上传文件</p><p class="text-xs text-slate-400 mt-1">支持图片、PDF等格式</p><p id="skill-file-names" class="text-xs text-indigo-600 mt-2 hidden"></p><div id="skill-file-previews" class="flex flex-wrap gap-2 mt-2 hidden"></div></div><input type="file" id="skill-file-input" class="hidden" accept="image/*,.pdf" multiple onchange="onSkillFileSelected(this)">`;
     } else {
         inputArea.innerHTML = `<div onclick="document.getElementById('skill-file-input').click()" class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all"><p class="text-sm text-slate-500">📎 点击上传文件（可选）</p><p id="skill-file-names" class="text-xs text-indigo-600 mt-1 hidden"></p><div id="skill-file-previews" class="flex flex-wrap gap-2 mt-1 hidden"></div></div><input type="file" id="skill-file-input" class="hidden" accept="image/*,.pdf,.xlsx,.xls,.csv,.docx" multiple onchange="onSkillFileSelected(this)"><textarea id="skill-input-text" rows="3" placeholder="${skill.placeholder}" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:border-indigo-400 transition-all bg-slate-50 focus:bg-white"></textarea>`;
     }
+    // Add usage guide panel and tips
+    const guideHtml = `<div class="mb-3">
+        <div class="bg-indigo-50/60 border border-indigo-100/80 rounded-xl overflow-hidden">
+            <button onclick="this.parentElement.querySelector('.guide-body').classList.toggle('hidden');this.querySelector('.guide-arrow').classList.toggle('rotate-180')" class="w-full flex items-center justify-between px-4 py-2.5 text-left">
+                <span class="text-xs font-semibold text-indigo-600 flex items-center gap-1.5">📖 使用说明</span>
+                <svg class="guide-arrow w-3.5 h-3.5 text-indigo-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="guide-body hidden px-4 pb-3">
+                <p class="text-xs text-indigo-700/80 leading-relaxed">${skill.tips || '输入需求或上传文件，点击"开始执行"即可。'}</p>
+                <div class="flex items-center gap-3 mt-2 text-[10px] text-indigo-500/70">
+                    <span>💡 支持上传文件</span>
+                    <span>📋 可查看历史</span>
+                    <span>🔄 可重复执行</span>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    // Insert guide before input area
+    const scrollContainer = document.querySelector('#skill-detail .flex-1.overflow-y-auto');
+    const existingGuide = scrollContainer.querySelector('.skill-guide-wrapper');
+    if (existingGuide) existingGuide.remove();
+    const guideWrapper = document.createElement('div');
+    guideWrapper.className = 'skill-guide-wrapper';
+    guideWrapper.innerHTML = guideHtml;
+    scrollContainer.insertBefore(guideWrapper, scrollContainer.querySelector('#detail-input-area').parentElement);
+
     document.getElementById('detail-result-area').classList.add('hidden');
     renderDetailHistory(skillId);
     document.getElementById('skill-detail').classList.add('active');
@@ -1241,6 +1342,7 @@ async function executeSkill() {
     skillHistory[skill.id].push({ input: inputText || '文件处理', time: Date.now() });
     localStorage.setItem('ai_skill_history', JSON.stringify(skillHistory));
     renderDetailHistory(skill.id);
+    renderRecentSkills();
 }
 
 function formatSkillResult(data) {
@@ -1317,7 +1419,7 @@ function formatTime(ts) {
     return (d.getMonth()+1) + '/' + d.getDate();
 }
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.opacity = '1'; setTimeout(() => t.style.opacity = '0', 2000); }
-function clearTasks() { taskHistory = []; localStorage.setItem('ai_task_history', '[]'); renderTaskList(); updateUsageCount(); showToast('已清空'); }
+function clearTasks() { if (!confirm('确定要清空所有任务记录吗？')) return; taskHistory = []; localStorage.setItem('ai_task_history', '[]'); renderTaskList(); updateUsageCount(); showToast('已清空'); }
 
 // Simple markdown formatter
 function formatMarkdown(text) {

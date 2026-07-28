@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.zhinenti.aistaff',
-  appName: 'AI智能客服',
+  appId: 'com.zhinenti.workbench',
+  appName: '智能工作台',
   webDir: 'frontend',
   bundledWebRuntime: false,
   server: {
@@ -34,7 +34,7 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: false,
   },
   ios: {
-    scheme: 'AI智能客服',
+    scheme: '智能工作台',
   },
 };
 
