@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载智能工作台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#58a6ff',
+                        'primary-dark': '#1f6feb',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-btn {
+            background: linear-gradient(135deg, #58a6ff 0%, #1f6feb 100%);
+        }
+        .gradient-btn:hover {
+            background: linear-gradient(135deg, #79b8ff 0%, #388bfd 100%);
+        }
+        .gradient-btn:active {
+            background: linear-gradient(135deg, #388bfd 0%, #1158c7 100%);
+            transform: scale(0.98);
+        }
+        .outline-btn:hover {
+            background-color: #f0f7ff;
+        }
+        .outline-btn:active {
+            background-color: #dbeafe;
+            transform: scale(0.98);
+        }
+        .icon-circle {
+            background: linear-gradient(135deg, #58a6ff 0%, #1f6feb 100%);
+        }
+    </style>
+</head>
+<body class="bg-white min-h-screen">
+    <div class="max-w-lg mx-auto px-5 pb-10">
+
+        <!-- 顶部导航 -->
+        <div class="pt-4 pb-2">
+            <a href="https://www.zhinenti.cn" class="inline-flex items-center text-gray-500 hover:text-primary-dark transition-colors">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                <span class="text-sm">返回</span>
+            </a>
+        </div>
+
+        <!-- 应用信息 -->
+        <div class="flex flex-col items-center pt-6 pb-8">
+            <div class="icon-circle w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg">
+                <span class="text-white text-lg font-bold">工作台</span>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mt-4">智能工作台</h1>
+            <p class="text-gray-500 mt-1">你的AI智能助手集合</p>
+            <span class="text-xs text-gray-400 mt-1">v1.0.0</span>
+        </div>
+
+        <!-- 手机端下载 -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">📱 手机版</h2>
+            <div class="flex flex-col items-center">
+                <a href="#" class="gradient-btn w-full text-center text-white font-semibold py-3.5 px-6 rounded-xl shadow-md transition-all duration-200 block">
+                    下载 Android 版
+                </a>
+                <p class="text-xs text-gray-400 mt-2">APK 安装包 | v1.0.0 | 约 5MB</p>
+
+                <!-- 二维码区域 -->
+                <div class="mt-5 w-40 h-40 bg-gray-100 rounded-2xl flex items-center justify-center border border-gray-200">
+                    <span class="text-gray-400 text-sm">扫码下载</span>
+                </div>
+
+                <p class="text-xs text-gray-400 mt-3">系统要求：Android 7.0+</p>
+            </div>
+        </div>
+
+        <!-- 电脑端下载 -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">💻 电脑版</h2>
+            <div class="flex flex-col items-center">
+                <a href="#" class="outline-btn w-full text-center text-primary-dark font-semibold py-3.5 px-6 rounded-xl border-2 border-primary bg-white shadow-sm transition-all duration-200 block">
+                    下载 Windows 版
+                </a>
+                <p class="text-xs text-gray-400 mt-2">Windows 安装包 | v1.0.0 | 约 50MB</p>
+                <p class="text-xs text-gray-400 mt-3">系统要求：Windows 10 及以上 (64位)</p>
+            </div>
+        </div>
+
+        <!-- 功能特性 -->
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">✨ 功能特性</h2>
+            <div class="grid grid-cols-1 gap-3">
+                <div class="bg-blue-50 rounded-xl p-4 flex items-start">
+                    <span class="text-2xl mr-3">🤖</span>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">AI对话</h3>
+                        <p class="text-sm text-gray-500 mt-0.5">智能问答，写作助手，翻译</p>
+                    </div>
+                </div>
+                <div class="bg-blue-50 rounded-xl p-4 flex items-start">
+                    <span class="text-2xl mr-3">📋</span>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">办公工具</h3>
+                        <p class="text-sm text-gray-500 mt-0.5">文档处理、表格生成、PPT制作</p>
+                    </div>
+                </div>
+                <div class="bg-blue-50 rounded-xl p-4 flex items-start">
+                    <span class="text-2xl mr-3">🖼️</span>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">图片处理</h3>
+                        <p class="text-sm text-gray-500 mt-0.5">AI绘图、图片编辑、OCR识别</p>
+                    </div>
+                </div>
+                <div class="bg-blue-50 rounded-xl p-4 flex items-start">
+                    <span class="text-2xl mr-3">🔧</span>
+                    <div>
+                        <h3 class="font-semibold text-gray-800">实用工具</h3>
+                        <p class="text-sm text-gray-500 mt-0.5">20+常用工具，开箱即用</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="text-center pt-4 pb-6 border-t border-gray-100">
+            <p class="text-sm text-gray-400">更多版本敬请期待</p>
+            <p class="text-xs text-gray-400 mt-1">支持 iOS / macOS 版本开发中</p>
+            <a href="https://www.zhinenti.cn" class="text-sm text-primary hover:text-primary-dark transition-colors mt-3 inline-block">
+                返回首页
+            </a>
+        </div>
+
+    </div>
+</body>
+</html>
