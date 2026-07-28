@@ -273,6 +273,11 @@ async def serve_icon(filename: str):
     return FileResponse(os.path.join(frontend_path, "icons", filename))
 
 
+@app.get("/download.html")
+async def serve_download():
+    return FileResponse(os.path.join(frontend_path, "download.html"))
+
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "message": "智能体工作台运行中", "version": "2.2.0"}
