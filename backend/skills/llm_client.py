@@ -7,7 +7,7 @@ from typing import Optional
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen-plus")
-LLM_VL_MODEL = os.getenv("LLM_VL_MODEL", "qwen-vl-plus")
+LLM_VL_MODEL = os.getenv("LLM_VL_MODEL", "glm-4.6v-flash")
 
 async def chat_completion(
     messages: list,
