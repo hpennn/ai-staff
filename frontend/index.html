@@ -60,6 +60,7 @@
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         .typing-dot:nth-child(3) { animation-delay: 0s; }
+        @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 60; display: none; align-items: flex-end; justify-content: center; }
         .modal-overlay.active { display: flex; }
         .modal-content { background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 32rem; max-height: 88vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
@@ -1090,16 +1091,22 @@ async function sendAgentMessage() {
     sendBtn.disabled = true;
     sendBtn.innerHTML = '<div class="flex gap-0.5"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
 
-    // Show typing indicator
+    // Show streaming message bubble with typing cursor
     const container = document.getElementById('agent-chat-messages');
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'flex justify-start fade-in typing-indicator';
-    typingDiv.innerHTML = '<div class="msg-bubble bg-white text-slate-400 rounded-2xl rounded-bl-md px-4 py-3 text-sm shadow-sm border border-slate-100"><div class="flex gap-1 items-center"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>';
-    container.appendChild(typingDiv);
+    const streamDiv = document.createElement('div');
+    streamDiv.className = 'flex justify-start fade-in ai-stream-bubble';
+    streamDiv.innerHTML = '<div class="msg-bubble bg-white text-slate-700 rounded-2xl rounded-bl-md px-4 py-3 text-sm shadow-sm border border-slate-100 markdown-content"><span class="ai-stream-content"></span><span class="stream-cursor" style="display:inline-block;width:2px;height:1em;background:#6366f1;margin-left:1px;vertical-align:text-bottom;animation:cursor-blink 1s step-end infinite;"></span></div>';
+    container.appendChild(streamDiv);
+    const streamContentEl = streamDiv.querySelector('.ai-stream-content');
+    const cursorEl = streamDiv.querySelector('.stream-cursor');
     container.scrollTop = container.scrollHeight;
 
+    let fullReply = '';
+    let streamDone = false;
+    let finalData = null;
+
     try {
-        // Call backend API
+        // Call backend API (SSE streaming)
         const history = agentChats[currentAgentId].slice(-20).map(m => ({ role: m.role, content: m.content }));
         const imageUrls = images.map(i => i.dataUrl);
         const resp = await fetch(API_BASE + '/agent-chat', {
@@ -1114,7 +1121,7 @@ async function sendAgentMessage() {
                 user_id: DEVICE_ID
             })
         });
-        console.log('[executeSkill] Response status:', resp.status);
+
         if (resp.status === 402) {
             const errData = await resp.json();
             const detail = errData.detail || {};
@@ -1122,26 +1129,99 @@ async function sendAgentMessage() {
             agentChats[currentAgentId].pop(); // Remove the user message we just added
             saveAgentChats();
             renderAgentMessages(agent);
-        } else {
-            const data = await resp.json();
-            agentChats[currentAgentId].push({ role: 'assistant', content: data.reply || '回复为空', time: Date.now() });
-            // Update credits from response
-            if (data.remaining_credits >= 0) {
-                currentCredits = data.remaining_credits;
-                document.getElementById('credits-balance').textContent = data.remaining_credits.toLocaleString();
-                const badge = document.getElementById('nav-credits-badge');
-                if (badge) {
-                    const display = data.remaining_credits < 100 ? data.remaining_credits.toString() : (data.remaining_credits >= 10000 ? (data.remaining_credits/10000).toFixed(1) + 'w' : data.remaining_credits.toLocaleString());
-                    badge.textContent = display;
-                }
-                // Show low credits warning
-                if (data.remaining_credits < 30 && data.remaining_credits > 0) {
-                    showToast('积分余额不足，请及时充值');
+            streamDiv.remove();
+            isSending = false;
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>';
+            return;
+        }
+
+        if (!resp.ok) {
+            throw new Error('HTTP ' + resp.status);
+        }
+
+        // Read SSE stream
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            // Parse SSE events
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep incomplete line
+
+            let eventData = '';
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed === '') {
+                    // End of event
+                    if (eventData) {
+                        try {
+                            const obj = JSON.parse(eventData);
+                            if (obj.done) {
+                                streamDone = true;
+                                finalData = obj;
+                                break;
+                            }
+                            if (obj.content) {
+                                fullReply += obj.content;
+                                streamContentEl.textContent = fullReply;
+                                container.scrollTop = container.scrollHeight;
+                            }
+                        } catch (e) {
+                            // ignore parse errors
+                        }
+                        eventData = '';
+                    }
+                } else if (trimmed.startsWith('data:')) {
+                    eventData += trimmed.substring(5).trim();
                 }
             }
+            if (streamDone) break;
         }
+
+        // If stream ended without done event, fallback
+        if (!streamDone && buffer) {
+            try {
+                const obj = JSON.parse(buffer);
+                if (obj.done) {
+                    finalData = obj;
+                } else if (obj.content) {
+                    fullReply += obj.content;
+                    streamContentEl.textContent = fullReply;
+                }
+            } catch (e) {}
+        }
+
+        // Remove cursor and save reply
+        if (cursorEl) cursorEl.remove();
+        if (!fullReply) fullReply = '回复为空';
+        agentChats[currentAgentId].push({ role: 'assistant', content: fullReply, time: Date.now() });
+
+        // Update credits from final done event
+        if (finalData && finalData.remaining_credits >= 0) {
+            currentCredits = finalData.remaining_credits;
+            const balanceEl = document.getElementById('credits-balance');
+            if (balanceEl) balanceEl.textContent = finalData.remaining_credits.toLocaleString();
+            const badge = document.getElementById('nav-credits-badge');
+            if (badge) {
+                const display = finalData.remaining_credits < 100 ? finalData.remaining_credits.toString() : (finalData.remaining_credits >= 10000 ? (finalData.remaining_credits/10000).toFixed(1) + 'w' : finalData.remaining_credits.toLocaleString());
+                badge.textContent = display;
+            }
+            if (finalData.remaining_credits < 30 && finalData.remaining_credits > 0) {
+                showToast('积分余额不足，请及时充值');
+            }
+        }
+
     } catch (e) {
-        agentChats[currentAgentId].push({ role: 'assistant', content: '抱歉，网络异常，请稍后重试。', time: Date.now() });
+        if (cursorEl) cursorEl.remove();
+        fullReply = fullReply || '抱歉，网络异常，请稍后重试。';
+        if (streamContentEl) streamContentEl.textContent = fullReply;
+        agentChats[currentAgentId].push({ role: 'assistant', content: fullReply, time: Date.now() });
     }
 
     saveAgentChats();
