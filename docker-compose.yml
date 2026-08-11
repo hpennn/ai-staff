@@ -10,4 +10,7 @@ services:
       - ./data:/app/data
     environment:
       - TZ=Asia/Shanghai
+      - LLM_API_KEY=4854154d31a042e2a8d8eee754097757.WDct0BiBIxyzswdH
+      - LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+      - LLM_MODEL=glm-4-flash
     restart: unless-stopped
