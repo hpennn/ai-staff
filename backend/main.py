@@ -248,6 +248,32 @@ async def embed_script(staff_id: int):
 """
     return Response(content=js_code, media_type="application/javascript")
 
+
+# 文件下载目录
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "data", "downloads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@app.get("/api/download/{filename}")
+async def download_file(filename: str):
+    from fastapi.responses import FileResponse
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(filepath):
+        return {"error": "文件不存在"}
+    return FileResponse(filepath, media_type="application/octet-stream", filename=filename)
+
+@app.post("/api/save-result")
+async def save_result(data: dict):
+    """保存识别结果为文件并返回下载链接"""
+    import uuid
+    from datetime import datetime
+    ext = data.get("format", "txt")
+    content = data.get("content", "")
+    filename = f"ocr_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}.{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+    return {"filename": filename, "download_url": f"/api/download/{filename}"}
+
 # Static files
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
 app.mount("/static", StaticFiles(directory=frontend_path), name="static")
