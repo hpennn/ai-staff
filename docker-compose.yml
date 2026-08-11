@@ -13,5 +13,7 @@ services:
       - LLM_API_KEY=4854154d31a042e2a8d8eee754097757.WDct0BiBIxyzswdH
       - LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4
       - LLM_MODEL=glm-4-flash
-      - LLM_VL_MODEL=glm-4.6v-flash
+      - LLM_VL_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+      - LLM_VL_API_KEY=ark-4f063f47-ee3d-45a2-a6db-677cc71cf784-041e9
+      - LLM_VL_MODEL=ep-20260707225043-z7nkm
     restart: unless-stopped
