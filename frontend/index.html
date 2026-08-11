@@ -315,6 +315,7 @@
             <div id="detail-result-area" class="hidden">
                 <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">执行结果</h3>
                 <div id="detail-result" class="bg-slate-50 rounded-xl p-4 text-sm text-slate-700 result-area border border-slate-100"></div>
+                <button id="download-result-btn" onclick="downloadResult()" class="hidden mt-3 w-full bg-slate-700 hover:bg-slate-800 text-white text-sm font-medium rounded-xl py-2.5 transition-colors flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>📥 下载结果</button>
             </div>
             <div id="detail-history" class="hidden">
                 <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">历史记录</h3>
@@ -1231,6 +1232,8 @@ function openSkillDetail(skillId) {
     scrollContainer.insertBefore(guideWrapper, scrollContainer.querySelector('#detail-input-area'));
 
     document.getElementById('detail-result-area').classList.add('hidden');
+    const dlBtn = document.getElementById('download-result-btn');
+    if (dlBtn) dlBtn.classList.add('hidden');
     renderDetailHistory(skillId);
     document.getElementById('skill-detail').classList.add('active');
 }
@@ -1323,6 +1326,13 @@ async function executeSkill() {
             const data = await resp.json();
             document.getElementById('detail-result-area').classList.remove('hidden');
             document.getElementById('detail-result').innerHTML = formatSkillResult(data);
+            // 显示下载按钮（OCR和数据提取结果）
+            const dlBtn = document.getElementById('download-result-btn');
+            if (dlBtn && data && !data.error) {
+                dlBtn.classList.remove('hidden');
+                dlBtn._resultData = data;
+                dlBtn._skillId = currentSkillId;
+            }
             // Update credits from response
             if (data.remaining_credits >= 0) {
                 currentCredits = data.remaining_credits;
@@ -1348,6 +1358,58 @@ async function executeSkill() {
     localStorage.setItem('ai_skill_history', JSON.stringify(skillHistory));
     renderDetailHistory(skill.id);
     renderRecentSkills();
+}
+
+function downloadResult() {
+    const dlBtn = document.getElementById('download-result-btn');
+    if (!dlBtn || !dlBtn._resultData) return;
+    const data = dlBtn._resultData;
+    const skillId = dlBtn._skillId || 'result';
+    
+    // 提取纯文本内容
+    let content = '';
+    let format = 'txt';
+    if (data.output && typeof data.output === 'object') {
+        if (data.output.content) content = data.output.content;
+        else if (data.output.message) content = data.output.message;
+        else if (data.output.text) content = data.output.text;
+        else if (data.output.data) content = JSON.stringify(data.output.data, null, 2);
+        else content = JSON.stringify(data.output, null, 2);
+    } else if (data.result) {
+        content = typeof data.result === 'string' ? data.result : JSON.stringify(data.result, null, 2);
+    } else if (data.output) {
+        content = data.output;
+    } else {
+        content = JSON.stringify(data, null, 2);
+    }
+    
+    const originalText = dlBtn.textContent;
+    dlBtn.disabled = true;
+    dlBtn.textContent = '下载中...';
+    
+    fetch('/api/save-result', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({content: content, format: format})
+    })
+    .then(res => res.json())
+    .then(resp => {
+        if (resp.download_url) {
+            const a = document.createElement('a');
+            a.href = resp.download_url;
+            a.download = skillId + '_result.txt';
+            a.click();
+        } else {
+            showToast('下载失败');
+        }
+    })
+    .catch(e => {
+        showToast('下载失败: ' + e.message);
+    })
+    .finally(() => {
+        dlBtn.disabled = false;
+        dlBtn.innerHTML = '📥 下载结果';
+    });
 }
 
 function formatSkillResult(data) {
