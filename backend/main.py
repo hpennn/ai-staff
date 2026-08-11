@@ -263,16 +263,132 @@ async def download_file(filename: str):
 
 @app.post("/api/save-result")
 async def save_result(data: dict):
-    """保存识别结果为文件并返回下载链接"""
+    """保存识别结果为文件并返回下载链接，支持 txt/md/pdf/docx 四种格式"""
     import uuid
     from datetime import datetime
-    ext = data.get("format", "txt")
+
+    fmt = data.get("format", "txt").lower()
     content = data.get("content", "")
-    filename = f"ocr_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}.{ext}"
+    custom_filename = data.get("filename", "").strip()
+
+    # 格式到扩展名映射
+    ext_map = {
+        "txt": "txt",
+        "text": "txt",
+        "md": "md",
+        "markdown": "md",
+        "pdf": "pdf",
+        "docx": "docx",
+        "word": "docx",
+    }
+    ext = ext_map.get(fmt, "txt")
+
+    # 生成文件名
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    short_id = uuid.uuid4().hex[:6]
+    if custom_filename:
+        # 去掉用户文件名中的扩展名，统一加上
+        import re
+        base_name = re.sub(r'\.(txt|md|pdf|docx)$', '', custom_filename, flags=re.IGNORECASE)
+        filename = f"{base_name}_{timestamp}.{ext}"
+    else:
+        filename = f"result_{timestamp}_{short_id}.{ext}"
+
     filepath = os.path.join(UPLOAD_DIR, filename)
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(content)
-    return {"filename": filename, "download_url": f"/api/download/{filename}"}
+
+    try:
+        if ext in ("txt", "md"):
+            # 纯文本 / Markdown 直接写入
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(content)
+
+        elif ext == "pdf":
+            # 使用 fpdf2 生成 PDF，支持中文
+            from fpdf import FPDF
+
+            class PDF(FPDF):
+                def header(self):
+                    pass
+
+                def footer(self):
+                    pass
+
+            pdf = PDF()
+            pdf.add_page()
+
+            # 注册中文字体：优先使用系统 Noto CJK 字体，其次尝试常见中文字体路径
+            font_paths = [
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+                "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+                "/System/Library/Fonts/PingFang.ttc",
+            ]
+            font_registered = False
+            for fp in font_paths:
+                if os.path.exists(fp):
+                    try:
+                        pdf.add_font("NotoSansSC", "", fp)
+                        pdf.set_font("NotoSansSC", size=11)
+                        font_registered = True
+                        break
+                    except Exception:
+                        continue
+
+            if not font_registered:
+                # 兜底：使用内置字体，可能中文显示为问号，但不报错
+                pdf.set_font("Helvetica", size=11)
+
+            # 设置左右边距
+            pdf.set_left_margin(15)
+            pdf.set_right_margin(15)
+
+            # 按行写入，自动换行
+            for line in content.split("\n"):
+                if not line:
+                    pdf.ln(6)
+                else:
+                    # multi_cell 自动换行
+                    pdf.multi_cell(0, 7, line)
+
+            pdf.output(filepath)
+
+        elif ext == "docx":
+            # 使用 python-docx 生成 Word 文档
+            from docx import Document
+            from docx.shared import Pt
+            from docx.oxml.ns import qn
+
+            doc = Document()
+
+            # 设置默认字体（中文）
+            style = doc.styles["Normal"]
+            font = style.font
+            font.name = "微软雅黑"
+            font.size = Pt(11)
+            # 设置中文字体
+            rpr = style.element.get_or_add_rPr()
+            rFonts = rpr.find(qn("w:rFonts"))
+            if rFonts is None:
+                from docx.oxml import OxmlElement
+                rFonts = OxmlElement("w:rFonts")
+                rpr.append(rFonts)
+            rFonts.set(qn("w:eastAsia"), "微软雅黑")
+
+            # 按段落写入内容
+            for line in content.split("\n"):
+                if not line:
+                    doc.add_paragraph("")
+                else:
+                    doc.add_paragraph(line)
+
+            doc.save(filepath)
+
+    except Exception as e:
+        return {"error": f"生成文件失败: {str(e)}"}, 500
+
+    return {"filename": filename, "download_url": f"/api/download/{filename}", "format": ext}
 
 # Static files
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
