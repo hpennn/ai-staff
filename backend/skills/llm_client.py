@@ -7,7 +7,9 @@ from typing import Optional
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen-plus")
-LLM_VL_MODEL = os.getenv("LLM_VL_MODEL", "glm-4.6v-flash")
+LLM_VL_BASE_URL = os.getenv("LLM_VL_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
+LLM_VL_API_KEY = os.getenv("LLM_VL_API_KEY", "")
+LLM_VL_MODEL = os.getenv("LLM_VL_MODEL", "ep-20260707225043-z7nkm")
 
 async def chat_completion(
     messages: list,
@@ -57,8 +59,8 @@ async def vision_completion(
     
     async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.post(
-            f"{LLM_BASE_URL}/chat/completions",
-            headers={"Authorization": f"Bearer {LLM_API_KEY}"},
+            f"{LLM_VL_BASE_URL}/chat/completions",
+            headers={"Authorization": f"Bearer {LLM_VL_API_KEY}"},
             json={
                 "model": model or LLM_VL_MODEL,
                 "messages": messages,
