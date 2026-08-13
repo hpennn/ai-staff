@@ -78,6 +78,7 @@ class SkillRegistry:
             "ppt_outline": ["ppt", "演示", "幻灯片", "大纲", "presentation"],
             "contract_review": ["合同审查", "合同审核", "风险", "条款审查", "合同风险"],
             "data_cleaner": ["数据清洗", "去重", "空值", "异常值", "clean", "清洗数据"],
+            "file_converter": ["转pdf", "转word", "转图片", "互转", "格式转换", "文件转换", "转格式", "pdf转word", "word转pdf", "图片转pdf", "pdf转图片", "转docx", "转png", "转jpg"],
         }
         text_lower = text.lower()
         for skill_id, keywords in keyword_map.items():
@@ -93,6 +94,7 @@ class SkillRegistry:
         from skills.preset import ocr_skill, data_extractor, copywriter
         from skills.preset import translator_skill, email_writer, meeting_notes
         from skills.preset import ppt_outline, contract_review, data_cleaner
+        from skills.preset import file_converter
 
         preset_skills = [
             SkillMeta(
@@ -216,8 +218,18 @@ class SkillRegistry:
                 handler=data_cleaner.execute,
                 tags=["数据清洗", "去重", "空值", "异常值", "csv"],
             ),
+            # === 新增：格式转换技能 ===
+            SkillMeta(
+                id="file_converter",
+                name="格式转换",
+                icon="🔄",
+                description="图片/PDF/Word文档格式互转",
+                input_type="file",
+                output_type="file",
+                handler=file_converter.execute,
+                tags=["格式转换", "PDF", "Word", "图片", "docx", "互转"],
+            ),
         ]
-
         for skill in preset_skills:
             self.register(skill)
 
