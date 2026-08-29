@@ -17,7 +17,7 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png">
     <meta name="msapplication-TileImage" content="/icons/icon-144.png">
     <meta name="msapplication-TileColor" content="#6366f1">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/tailwind-play.js"></script>
     <script>
     tailwind.config = {
         theme: {
@@ -629,7 +629,7 @@ function switchLoginMode(mode) {
         registerTab.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
         registerTab.classList.add('text-slate-500');
         loginBtn.textContent = '登录';
-        hint.innerHTML = '还没有账号？<span class="text-indigo-500 cursor-pointer font-medium" onclick="switchLoginMode('register')">去注册</span>';
+        hint.innerHTML = '还没有账号？<span class="text-indigo-500 cursor-pointer font-medium" onclick="switchLoginMode(\'register\')">去注册</span>';
 
         loginUsernameField.classList.remove('hidden');
         loginPasswordField.classList.remove('hidden');
@@ -643,7 +643,7 @@ function switchLoginMode(mode) {
         loginTab.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
         loginTab.classList.add('text-slate-500');
         loginBtn.textContent = '注册';
-        hint.innerHTML = '已有账号？<span class="text-indigo-500 cursor-pointer font-medium" onclick="switchLoginMode('login')">去登录</span>';
+        hint.innerHTML = '已有账号？<span class="text-indigo-500 cursor-pointer font-medium" onclick="switchLoginMode(\'login\')">去登录</span>';
 
         loginUsernameField.classList.add('hidden');
         loginPasswordField.classList.remove('hidden');  // 密码在注册时也显示（用login-password）
@@ -888,7 +888,8 @@ async function submitAuth() {
     }
 }
 
-// ===== 退出登录 =====async function doLogout() {
+// ===== 退出登录 =====
+async function doLogout() {
     try {
         await fetch(API_BASE + '/auth/logout', {
             method: 'POST',
@@ -1055,7 +1056,7 @@ function init() {
 }
 
 function getAllAgents() { return [...DEFAULT_AGENTS, ...customAgents]; }
-function updateUsageCount() { document.getElementById('usage-count').textContent = taskHistory.length; }
+function updateUsageCount() { var _uc = document.getElementById('usage-count'); if (_uc) _uc.textContent = taskHistory.length; }
 
 // ===== 最近使用渲染 =====
 function renderRecentSkills() {
